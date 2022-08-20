@@ -53,21 +53,26 @@ dependencies {
 
 setGroup 'de.srsco'
 archivesBaseName = project.name
+def commonManifest = manifest {
+    attributes([
+            'Implementation-Vendor'   : "srsCode",
+            'Implementation-Title'    : "${project.name}",
+            'Implementation-Version'  : "${project.version}",
+            'Build-Jdk'               : "${System.properties['java.vendor']} ${System.properties['java.vm.version']}",
+            'Build-Timestamp'         : java.time.OffsetDateTime.now() as String
+    ])
+}
+
 jar {
     from 'LICENCE.txt'
-    manifest.attributes([
-        'Specification-Vendor'    : "srsCode",
-        'Specification-Title'     : "${project.name}",
-        'Specification-Version'   : '1',
-        'Implementation-Vendor'   : "srsCode",
-        'Implementation-Title'    : "${project.name}",
-        'Implementation-Version'  : "${project.version}",
-        'Implementation-Timestamp': java.time.OffsetDateTime.now() as String,
-    ])
+    manifest.from commonManifest
+    dependsOn('sourceJar')
 }
 
 task sourceJar(type: Jar) {
     from sourceSets.main.allJava
+    from 'LICENCE.txt'
+    manifest.from commonManifest
     classifier = 'sources'
 }
 
