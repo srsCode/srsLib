@@ -259,7 +259,7 @@ public final class Util
      *
      * @since 0.1.0, MC 1.19.1, 2022.08.08
      */
-    public static Component getTranslation(final CharSequence key)
+    public static Component getTranslation(final String key)
     {
         return getTranslation(key, CommonComponents.EMPTY);
     }
@@ -274,9 +274,9 @@ public final class Util
      *
      * @since 0.1.0, MC 1.19.1, 2022.08.08
      */
-    public static Component getTranslation(final CharSequence key, final Object... objs)
+    public static Component getTranslation(final String key, final Object... objs)
     {
-        return getTranslation(key.toString(), CommonComponents.EMPTY, null, objs);
+        return getTranslation(key, CommonComponents.EMPTY, null, objs);
     }
 
     /**
@@ -290,9 +290,9 @@ public final class Util
      *
      * @since 0.1.0, MC 1.19.1, 2022.08.08
      */
-    public static Component getTranslation(final CharSequence key, @Nullable final Component component, final Object... objs)
+    public static Component getTranslation(final String key, @Nullable final Component component, final Object... objs)
     {
-        return getTranslation(key.toString(), component, null, objs);
+        return getTranslation(key, component, null, objs);
     }
 
     /**
@@ -325,13 +325,13 @@ public final class Util
      * being passed as a token object.</p>
      *
      * @param name     The ID of the DamageSource.
-     * @param lkb      The LangKey builder used to generate a langkey from.
+     * @param langKeyBuilder      The LangKey builder used to generate a langkey from.
      * @param fallback A fallback message if the langkey does not exist.
      * @return         A new DamageSource.
      *
      * @since 0.1.0, MC 1.19.1, 2022.08.08
      */
-    public static DamageSource createDamageSource(final String name, final LangKeyBuilder lkb, final String fallback)
+    public static DamageSource createDamageSource(final String name, final LangKeyBuilder langKeyBuilder, final String fallback)
     {
         return new DamageSource(name)
         {
@@ -340,9 +340,10 @@ public final class Util
             public Component getLocalizedDeathMessage(@Nonnull final LivingEntity killed)
             {
                 final var killer = killed.getKillCredit();
+                final var lkb = langKeyBuilder.append(name).push();
                 return killer == null
-                    ? getTranslation(lkb.append(name),             killed.getDisplayName(), fallback != null ? killed.getDisplayName().copy().append(" " + fallback) : null)
-                    : getTranslation(lkb.append(name, "attacked"), killed.getDisplayName(), fallback != null ? killed.getDisplayName().copy().append(" " + fallback) : null, killer);
+                    ? getTranslation(lkb.getKey(),                    killed.getDisplayName(), fallback != null ? killed.getDisplayName().copy().append(" " + fallback) : null)
+                    : getTranslation(lkb.append("attacked").getKey(), killed.getDisplayName(), fallback != null ? killed.getDisplayName().copy().append(" " + fallback) : null, killer);
             }
         };
     }
