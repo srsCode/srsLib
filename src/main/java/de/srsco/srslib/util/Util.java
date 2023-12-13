@@ -330,7 +330,7 @@ public final class Util
      *
      * @since 0.1.0, MC 1.19.1, 2022.08.08
      */
-    public static DamageSource createDamageSource2(final DamageType damageType, final LangKeyBuilder langKeyBuilder, final String fallback)
+    public static DamageSource createDamageSource(final DamageType damageType, final LangKeyBuilder langKeyBuilder, final String fallback)
     {
         return new DamageSource(new Holder.Direct<>(damageType))
         {
