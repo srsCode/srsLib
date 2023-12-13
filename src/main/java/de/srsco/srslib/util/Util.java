@@ -45,8 +45,12 @@ import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import net.minecraft.core.DefaultedRegistry;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.particles.ParticleType;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -54,6 +58,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.stats.StatType;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -72,6 +77,7 @@ import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -82,18 +88,10 @@ import net.minecraft.world.level.levelgen.feature.foliageplacers.FoliagePlacerTy
 import net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProviderType;
 import net.minecraft.world.level.levelgen.feature.treedecorators.TreeDecoratorType;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Material;
 
-import net.minecraftforge.common.ForgeI18n;
-import net.minecraftforge.common.world.BiomeModifier;
-import net.minecraftforge.common.world.StructureModifier;
-import net.minecraftforge.fluids.FluidType;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.ForgeRegistries.Keys;
-import net.minecraftforge.registries.ForgeRegistry;
-import net.minecraftforge.registries.IForgeRegistry;
+import net.neoforged.neoforge.common.I18nExtension;
 
-
+@SuppressWarnings({"unused", "WeakerAccess"})
 public final class Util
 {
     private static final Logger LOGGER = getLogger(Util.class);
@@ -129,7 +127,7 @@ public final class Util
 
     /**
      * <h3>A helper method to get a {@link ResourceLocation} for a {@link Block}.</h3>
-     * Maps a ResourceKey to a ResourceLocation as {@link ForgeRegistry#getKey} returns the registry default key instead of null.
+     * Maps a ResourceKey to a ResourceLocation as {@link DefaultedRegistry#getKey} returns the registry default key instead of null.
      *
      * @param block The Block to get a ResourceLocation for.
      * @return The ResourceLocation.
@@ -138,12 +136,12 @@ public final class Util
      */
     public static Optional<ResourceLocation> getResLoc(final Block block)
     {
-        return ForgeRegistries.BLOCKS.getResourceKey(block).map(ResourceKey::location);
+        return BuiltInRegistries.BLOCK.getResourceKey(block).map(ResourceKey::location);
     }
 
     /**
      * <h3>A helper method to get a {@link ResourceLocation} for a {@link Fluid}.</h3>
-     * Maps a ResourceKey to a ResourceLocation as {@link ForgeRegistry#getKey} returns the registry default key instead of null.
+     * Maps a ResourceKey to a ResourceLocation as {@link DefaultedRegistry#getKey} returns the registry default key instead of null.
      *
      * @param fluid The Biome to get a ResourceLocation for.
      * @return The ResourceLocation.
@@ -152,12 +150,12 @@ public final class Util
      */
     public static Optional<ResourceLocation> getResLoc(final Fluid fluid)
     {
-        return ForgeRegistries.FLUIDS.getResourceKey(fluid).map(ResourceKey::location);
+        return BuiltInRegistries.FLUID.getResourceKey(fluid).map(ResourceKey::location);
     }
 
     /**
      * <h3>A helper method to get a {@link ResourceLocation} for a {@link Item}.</h3>
-     * Maps a ResourceKey to a ResourceLocation as {@link ForgeRegistry#getKey} returns the registry default key instead of null.
+     * Maps a ResourceKey to a ResourceLocation as {@link DefaultedRegistry#getKey} returns the registry default key instead of null.
      *
      * @param item The Item to get a ResourceLocation for.
      * @return The ResourceLocation.
@@ -166,26 +164,27 @@ public final class Util
      */
     public static Optional<ResourceLocation> getResLoc(final Item item)
     {
-        return ForgeRegistries.ITEMS.getResourceKey(item).map(ResourceKey::location);
+        return BuiltInRegistries.ITEM.getResourceKey(item).map(ResourceKey::location);
     }
 
     /**
-     * <h3>A helper method to get a {@link ResourceLocation} for a {@link Biome}.</h3>
-     * Maps a ResourceKey to a ResourceLocation as {@link ForgeRegistry#getKey} returns the registry default key instead of null.
+     * <h3>A helper method to get a {@link ResourceLocation} for a {@link Biome} from a {@link Level}.</h3>
+     * Maps a ResourceKey to a ResourceLocation as {@link DefaultedRegistry#getKey} returns the registry default key instead of null.
      *
+     * @param level The Level to get the Biome registry from.
      * @param biome The Biome to get a ResourceLocation for.
      * @return The ResourceLocation.
      *
      * @since 0.1.0, MC 1.19.1, 2022.08.08
      */
-    public static Optional<ResourceLocation> getResLoc(final Biome biome)
+    public static Optional<ResourceLocation> getResLoc(final Level level, final Biome biome)
     {
-        return ForgeRegistries.BIOMES.getResourceKey(biome).map(ResourceKey::location);
+        return level.registryAccess().registry(Registries.BIOME).flatMap(registry -> registry.getResourceKey(biome).map(ResourceKey::location));
     }
 
     /**
      * <h3>A helper method to get a {@link ResourceLocation} for a {@link Feature}.</h3>
-     * Maps a ResourceKey to a ResourceLocation as {@link ForgeRegistry#getKey} returns the registry default key instead of null.
+     * Maps a ResourceKey to a ResourceLocation.
      *
      * @param feature The Biome to get a ResourceLocation for.
      * @return The ResourceLocation.
@@ -194,12 +193,12 @@ public final class Util
      */
     public static Optional<ResourceLocation> getResLoc(final Feature<?> feature)
     {
-        return ForgeRegistries.FEATURES.getResourceKey(feature).map(ResourceKey::location);
+        return BuiltInRegistries.FEATURE.getResourceKey(feature).map(ResourceKey::location);
     }
 
     /**
      * <h3>A helper method to get a {@link ResourceLocation} for a {@link EntityType}.</h3>
-     * Maps a ResourceKey to a ResourceLocation as {@link ForgeRegistry#getKey} returns the registry default key instead of null.
+     * Maps a ResourceKey to a ResourceLocation as {@link DefaultedRegistry#getKey} returns the registry default key instead of null.
      *
      * @param entityType The Biome to get a ResourceLocation for.
      * @return The ResourceLocation.
@@ -208,17 +207,17 @@ public final class Util
      */
     public static Optional<ResourceLocation> getResLoc(final EntityType<?> entityType)
     {
-        return ForgeRegistries.ENTITY_TYPES.getResourceKey(entityType).map(ResourceKey::location);
+        return BuiltInRegistries.ENTITY_TYPE.getResourceKey(entityType).map(ResourceKey::location);
     }
 
     /**
-     * <h3>A helper to get the associated {@link IForgeRegistry} for an object like a Block or Item.</h3>
+     * <h3>A helper to get the associated {@link Registry} for an object like a Block or Item.</h3>
      *
      * @param obj An object to look up a IForgeRegistry for.
      * @param <T> The type of object.
      * @return    A registry instance associated with the object if it exist.
      */
-    public static <T> Optional<IForgeRegistry<T>> getRegistryFor(final T obj)
+    public static <T> Optional<Registry<T>> getRegistryFor(final T obj)
     {
         return RegistryHelper.getRegistryHelper(obj).map(RegistryHelper::registry).map(Supplier::get);
     }
@@ -252,7 +251,7 @@ public final class Util
 
     /**
      * <h3>Creates a translatable Component for a langkey.</h3>
-     * Uses {@link ForgeI18n}
+     * Uses {@link I18nExtension}
      *
      * @param key  A langkey
      * @return A translatable Component, or a literal Component if the langkey does not exist.
@@ -266,7 +265,7 @@ public final class Util
 
     /**
      * <h3>Creates a translatable Component for a langkey.</h3>
-     * Uses {@link ForgeI18n}
+     * Uses {@link I18nExtension}
      *
      * @param key  A langkey
      * @param objs Objects to be used in a formatted text string.
@@ -281,7 +280,7 @@ public final class Util
 
     /**
      * <h3>Creates a translatable Component for a langkey using a possibly supplied Component.</h3>
-     * Uses {@link ForgeI18n}
+     * Uses {@link I18nExtension}
      *
      * @param component A possible Component to be used for translation (i.e. a {@link Player} display name).
      * @param key       A langkey
@@ -297,7 +296,7 @@ public final class Util
 
     /**
      * <h3>Creates a translatable Component for a langkey using a possible supplied Component or uses a fallback string if the langkey does not exist.</h3>
-     * Uses {@link ForgeI18n}
+     * Uses {@link I18nExtension}
      *
      * @param component A possible Component to be used for translation (i.e. a {@link Player} display name).
      * @param key       A langkey
@@ -308,7 +307,7 @@ public final class Util
      */
     public static Component getTranslation(final String key, @Nullable final Component component, @Nullable final Component fallback, final Object... objs)
     {
-        return !ForgeI18n.getPattern(key).equals(key)
+        return !I18nExtension.getPattern(key).equals(key)
             ? component != null ? Component.translatable(key, component, objs) : Component.translatable(key, objs)
             : fallback  != null ? fallback : INVALID_LANGKEY.apply(key, Arrays.toString(objs));
     }
@@ -324,119 +323,31 @@ public final class Util
      * and '.killer' will be added if the dead entity had an attacker with the attacker
      * being passed as a token object.</p>
      *
-     * @param name     The ID of the DamageSource.
-     * @param langKeyBuilder      The LangKey builder used to generate a langkey from.
-     * @param fallback A fallback message if the langkey does not exist.
-     * @return         A new DamageSource.
+     * @param damageType     A DamageType for the DamageSource.
+     * @param langKeyBuilder The LangKey builder used to generate a langkey from.
+     * @param fallback       A fallback message if the langkey does not exist.
+     * @return               A new DamageSource.
      *
      * @since 0.1.0, MC 1.19.1, 2022.08.08
      */
-    public static DamageSource createDamageSource(final String name, final LangKeyBuilder langKeyBuilder, final String fallback)
+    public static DamageSource createDamageSource2(final DamageType damageType, final LangKeyBuilder langKeyBuilder, final String fallback)
     {
-        return new DamageSource(name)
+        return new DamageSource(new Holder.Direct<>(damageType))
         {
             @Override
             @Nonnull
             public Component getLocalizedDeathMessage(@Nonnull final LivingEntity killed)
             {
                 final var killer = killed.getKillCredit();
-                final var lkb = langKeyBuilder.append(name).push();
+                final var lkb = langKeyBuilder.append(damageType.msgId()).push();
+                final var killedname = killed.getDisplayName();
                 return killer == null
-                    ? getTranslation(lkb.getKey(),                    killed.getDisplayName(), fallback != null ? killed.getDisplayName().copy().append(" " + fallback) : null)
-                    : getTranslation(lkb.append("attacked").getKey(), killed.getDisplayName(), fallback != null ? killed.getDisplayName().copy().append(" " + fallback) : null, killer);
+                    ? getTranslation(lkb.getKey(),                    killedname, fallback != null ? killedname != null ? killedname.copy().append(" " + fallback) : null : null)
+                    : getTranslation(lkb.append("attacked").getKey(), killedname, fallback != null ? killedname != null ? killedname.copy().append(" " + fallback) : null : null, killer);
             }
         };
     }
 
-    /**
-     * <h3>Gets a String name for a vanilla {@link Material} from the {@link Materials} helper enum.</h3>
-     * This will obviously only work for vanilla Materials.
-     *
-     * @param material The Material to get a name for.
-     * @return A String name of the Material being looked up.
-     *
-     * @since 0.1.0, MC 1.19.1, 2022.08.08
-     */
-    public static String getMaterialName(final Material material)
-    {
-        return Materials.getName(material);
-    }
-
-    /**
-     * <h3>A helper enum to get String names for vanilla {@link Material}s.</h3>
-     * (Getting field names through reflection is useless due to obfuscation.)
-     *
-     * @since 0.1.0, MC 1.19.1, 2022.08.08 - 49 Materials
-     */
-    public enum Materials
-    {
-        AIR(Material.AIR),
-        STRUCTURAL_AIR(Material.STRUCTURAL_AIR),
-        PORTAL(Material.PORTAL),
-        CLOTH_DECORATION(Material.CLOTH_DECORATION),
-        PLANT(Material.PLANT),
-        WATER_PLANT(Material.WATER_PLANT),
-        REPLACEABLE_PLANT(Material.REPLACEABLE_PLANT),
-        REPLACEABLE_FIREPROOF_PLANT(Material.REPLACEABLE_FIREPROOF_PLANT),
-        REPLACEABLE_WATER_PLANT(Material.REPLACEABLE_WATER_PLANT),
-        WATER(Material.WATER),
-        BUBBLE_COLUMN(Material.BUBBLE_COLUMN),
-        LAVA(Material.LAVA),
-        TOP_SNOW(Material.TOP_SNOW),
-        FIRE(Material.FIRE),
-        DECORATION(Material.DECORATION),
-        WEB(Material.WEB),
-        SCULK(Material.SCULK),
-        BUILDABLE_GLASS(Material.BUILDABLE_GLASS),
-        CLAY(Material.CLAY),
-        DIRT(Material.DIRT),
-        GRASS(Material.GRASS),
-        ICE_SOLID(Material.ICE_SOLID),
-        SAND(Material.SAND),
-        SPONGE(Material.SPONGE),
-        SHULKER_SHELL(Material.SHULKER_SHELL),
-        WOOD(Material.WOOD),
-        NETHER_WOOD(Material.NETHER_WOOD),
-        BAMBOO_SAPLING(Material.BAMBOO_SAPLING),
-        BAMBOO(Material.BAMBOO),
-        WOOL(Material.WOOL),
-        EXPLOSIVE(Material.EXPLOSIVE),
-        LEAVES(Material.LEAVES),
-        GLASS(Material.GLASS),
-        ICE(Material.ICE),
-        CACTUS(Material.CACTUS),
-        STONE(Material.STONE),
-        METAL(Material.METAL),
-        SNOW(Material.SNOW),
-        HEAVY_METAL(Material.HEAVY_METAL),
-        BARRIER(Material.BARRIER),
-        PISTON(Material.PISTON),
-        MOSS(Material.MOSS),
-        VEGETABLE(Material.VEGETABLE),
-        EGG(Material.EGG),
-        CAKE(Material.CAKE),
-        AMETHYST(Material.AMETHYST),
-        POWDER_SNOW(Material.POWDER_SNOW),
-        FROGSPAWN(Material.FROGSPAWN),
-        FROGLIGHT(Material.FROGLIGHT);
-
-        private final Material material;
-
-        Materials(final Material material)
-        {
-            this.material = material;
-        }
-
-        public static Optional<Materials> get(final Material mat)
-        {
-            return Arrays.stream(values()).filter(m -> Objects.equals(m.material, mat)).findFirst();
-        }
-
-        public static String getName(final Material mat)
-        {
-            return get(mat).map(Enum::name).orElse("[NULL]");
-        }
-    }
 
     /**
      * <h3>A helper class used for generating language keys for localisation.</h3>
@@ -504,6 +415,7 @@ public final class Util
             return Objects.hash(toString());
         }
 
+        @Nonnull
         @Override
         public String toString()
         {
@@ -604,7 +516,7 @@ public final class Util
     }
 
     /**
-     * <h3>A helper class to look up the associated {@link ResourceKey} or {@link IForgeRegistry} for an object like a Block or Item.</h3>
+     * <h3>A helper class to look up the associated {@link ResourceKey} or {@link Registry} for an object like a Block or Item.</h3>
      *
      * @param key      The Resource key for the registry.
      * @param registry A Supplier for the IForgeRegistry instance.
@@ -612,48 +524,43 @@ public final class Util
      *
      * @since 0.1.0, MC 1.19.1, 2022.08.08 - INTERNAL
      */
-    private record RegistryHelper<T>(ResourceKey<Registry<T>> key, Supplier<IForgeRegistry<T>> registry)
+    private record RegistryHelper<T>(ResourceKey<Registry<T>> key, Supplier<Registry<T>> registry)
     {
         private static final Map<Class<?>, RegistryHelper<?>> HELPERS = new HashMap<>();
 
         static
         {
-            HELPERS.put(Block.class,                  make(Keys.BLOCKS,                     () -> ForgeRegistries.BLOCKS));
-            HELPERS.put(Fluid.class,                  make(Keys.FLUIDS,                     () -> ForgeRegistries.FLUIDS));
-            HELPERS.put(Item.class,                   make(Keys.ITEMS,                      () -> ForgeRegistries.ITEMS));
-            HELPERS.put(MobEffect.class,              make(Keys.MOB_EFFECTS,                () -> ForgeRegistries.MOB_EFFECTS));
-            HELPERS.put(Potion.class,                 make(Keys.POTIONS,                    () -> ForgeRegistries.POTIONS));
-            HELPERS.put(Attribute.class,              make(Keys.ATTRIBUTES,                 () -> ForgeRegistries.ATTRIBUTES));
-            HELPERS.put(StatType.class,               make(Keys.STAT_TYPES,                 () -> ForgeRegistries.STAT_TYPES));
-            HELPERS.put(SoundEvent.class,             make(Keys.SOUND_EVENTS,               () -> ForgeRegistries.SOUND_EVENTS));
-            HELPERS.put(Enchantment.class,            make(Keys.ENCHANTMENTS,               () -> ForgeRegistries.ENCHANTMENTS));
-            HELPERS.put(EntityType.class,             make(Keys.ENTITY_TYPES,               () -> ForgeRegistries.ENTITY_TYPES));
-            HELPERS.put(PaintingVariant.class,        make(Keys.PAINTING_VARIANTS,          () -> ForgeRegistries.PAINTING_VARIANTS));
-            HELPERS.put(ParticleType.class,           make(Keys.PARTICLE_TYPES,             () -> ForgeRegistries.PARTICLE_TYPES));
-            HELPERS.put(MenuType.class,               make(Keys.MENU_TYPES,                 () -> ForgeRegistries.MENU_TYPES));
-            HELPERS.put(BlockEntityType.class,        make(Keys.BLOCK_ENTITY_TYPES,         () -> ForgeRegistries.BLOCK_ENTITY_TYPES));
-            HELPERS.put(RecipeType.class,             make(Keys.RECIPE_TYPES,               () -> ForgeRegistries.RECIPE_TYPES));
-            HELPERS.put(RecipeSerializer.class,       make(Keys.RECIPE_SERIALIZERS,         () -> ForgeRegistries.RECIPE_SERIALIZERS));
-            HELPERS.put(VillagerProfession.class,     make(Keys.VILLAGER_PROFESSIONS,       () -> ForgeRegistries.VILLAGER_PROFESSIONS));
-            HELPERS.put(PoiType.class,                make(Keys.POI_TYPES,                  () -> ForgeRegistries.POI_TYPES));
-            HELPERS.put(MemoryModuleType.class,       make(Keys.MEMORY_MODULE_TYPES,        () -> ForgeRegistries.MEMORY_MODULE_TYPES));
-            HELPERS.put(SensorType.class,             make(Keys.SENSOR_TYPES,               () -> ForgeRegistries.SENSOR_TYPES));
-            HELPERS.put(Schedule.class,               make(Keys.SCHEDULES,                  () -> ForgeRegistries.SCHEDULES));
-            HELPERS.put(Activity.class,               make(Keys.ACTIVITIES,                 () -> ForgeRegistries.ACTIVITIES));
-            HELPERS.put(WorldCarver.class,            make(Keys.WORLD_CARVERS,              () -> ForgeRegistries.WORLD_CARVERS));
-            HELPERS.put(Feature.class,                make(Keys.FEATURES,                   () -> ForgeRegistries.FEATURES));
-            HELPERS.put(ChunkStatus.class,            make(Keys.CHUNK_STATUS,               () -> ForgeRegistries.CHUNK_STATUS));
-            HELPERS.put(BlockStateProviderType.class, make(Keys.BLOCK_STATE_PROVIDER_TYPES, () -> ForgeRegistries.BLOCK_STATE_PROVIDER_TYPES));
-            HELPERS.put(FoliagePlacerType.class,      make(Keys.FOLIAGE_PLACER_TYPES,       () -> ForgeRegistries.FOLIAGE_PLACER_TYPES));
-            HELPERS.put(TreeDecoratorType.class,      make(Keys.TREE_DECORATOR_TYPES,       () -> ForgeRegistries.TREE_DECORATOR_TYPES));
-            HELPERS.put(Biome.class,                  make(Keys.BIOMES,                     () -> ForgeRegistries.BIOMES));
-            // below Suppliers return new instances.
-            HELPERS.put(FluidType.class,              make(Keys.FLUID_TYPES,                      ForgeRegistries.FLUID_TYPES));
-            HELPERS.put(BiomeModifier.class,          make(Keys.BIOME_MODIFIERS,                  ForgeRegistries.BIOME_MODIFIERS_BUILTIN));
-            HELPERS.put(StructureModifier.class,      make(Keys.STRUCTURE_MODIFIERS,              ForgeRegistries.STRUCTURE_MODIFIERS_BUILTIN));
+            HELPERS.put(Block.class,                  make(Registries.BLOCK,                     () -> BuiltInRegistries.BLOCK));
+            HELPERS.put(Fluid.class,                  make(Registries.FLUID,                     () -> BuiltInRegistries.FLUID));
+            HELPERS.put(Item.class,                   make(Registries.ITEM,                      () -> BuiltInRegistries.ITEM));
+            HELPERS.put(MobEffect.class,              make(Registries.MOB_EFFECT,                () -> BuiltInRegistries.MOB_EFFECT));
+            HELPERS.put(Potion.class,                 make(Registries.POTION,                    () -> BuiltInRegistries.POTION));
+            HELPERS.put(Attribute.class,              make(Registries.ATTRIBUTE,                 () -> BuiltInRegistries.ATTRIBUTE));
+            HELPERS.put(StatType.class,               make(Registries.STAT_TYPE,                 () -> BuiltInRegistries.STAT_TYPE));
+            HELPERS.put(SoundEvent.class,             make(Registries.SOUND_EVENT,               () -> BuiltInRegistries.SOUND_EVENT));
+            HELPERS.put(Enchantment.class,            make(Registries.ENCHANTMENT,               () -> BuiltInRegistries.ENCHANTMENT));
+            HELPERS.put(EntityType.class,             make(Registries.ENTITY_TYPE,               () -> BuiltInRegistries.ENTITY_TYPE));
+            HELPERS.put(PaintingVariant.class,        make(Registries.PAINTING_VARIANT,          () -> BuiltInRegistries.PAINTING_VARIANT));
+            HELPERS.put(ParticleType.class,           make(Registries.PARTICLE_TYPE,             () -> BuiltInRegistries.PARTICLE_TYPE));
+            HELPERS.put(MenuType.class,               make(Registries.MENU,                      () -> BuiltInRegistries.MENU));
+            HELPERS.put(BlockEntityType.class,        make(Registries.BLOCK_ENTITY_TYPE,         () -> BuiltInRegistries.BLOCK_ENTITY_TYPE));
+            HELPERS.put(RecipeType.class,             make(Registries.RECIPE_TYPE,               () -> BuiltInRegistries.RECIPE_TYPE));
+            HELPERS.put(RecipeSerializer.class,       make(Registries.RECIPE_SERIALIZER,         () -> BuiltInRegistries.RECIPE_SERIALIZER));
+            HELPERS.put(VillagerProfession.class,     make(Registries.VILLAGER_PROFESSION,       () -> BuiltInRegistries.VILLAGER_PROFESSION));
+            HELPERS.put(PoiType.class,                make(Registries.POINT_OF_INTEREST_TYPE,    () -> BuiltInRegistries.POINT_OF_INTEREST_TYPE));
+            HELPERS.put(MemoryModuleType.class,       make(Registries.MEMORY_MODULE_TYPE,        () -> BuiltInRegistries.MEMORY_MODULE_TYPE));
+            HELPERS.put(SensorType.class,             make(Registries.SENSOR_TYPE,               () -> BuiltInRegistries.SENSOR_TYPE));
+            HELPERS.put(Schedule.class,               make(Registries.SCHEDULE,                  () -> BuiltInRegistries.SCHEDULE));
+            HELPERS.put(Activity.class,               make(Registries.ACTIVITY,                  () -> BuiltInRegistries.ACTIVITY));
+            HELPERS.put(WorldCarver.class,            make(Registries.CARVER,                    () -> BuiltInRegistries.CARVER));
+            HELPERS.put(Feature.class,                make(Registries.FEATURE,                   () -> BuiltInRegistries.FEATURE));
+            HELPERS.put(ChunkStatus.class,            make(Registries.CHUNK_STATUS,              () -> BuiltInRegistries.CHUNK_STATUS));
+            HELPERS.put(BlockStateProviderType.class, make(Registries.BLOCK_STATE_PROVIDER_TYPE, () -> BuiltInRegistries.BLOCKSTATE_PROVIDER_TYPE));
+            HELPERS.put(FoliagePlacerType.class,      make(Registries.FOLIAGE_PLACER_TYPE,       () -> BuiltInRegistries.FOLIAGE_PLACER_TYPE));
+            HELPERS.put(TreeDecoratorType.class,      make(Registries.TREE_DECORATOR_TYPE,       () -> BuiltInRegistries.TREE_DECORATOR_TYPE));
         }
 
-        private static <T> RegistryHelper<T> make(final ResourceKey<Registry<T>> key, final Supplier<IForgeRegistry<T>> registry)
+        private static <T> RegistryHelper<T> make(final ResourceKey<Registry<T>> key, final Supplier<Registry<T>> registry)
         {
             return new RegistryHelper<>(key, registry);
         }

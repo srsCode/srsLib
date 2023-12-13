@@ -1,86 +1,50 @@
 plugins {
-    id 'org.ajoberstar.reckon' version '0.16.1'
-    id 'net.minecraftforge.gradle' version '5.1.+'
-    id 'checkstyle'
+    id 'java-library'
     id 'maven-publish'
+    id 'idea'
+    id 'checkstyle'
+    id 'net.neoforged.gradle.userdev' version '7.0.+'
 }
 if (file('../.etc/srscode-MC.gradle').exists()) { apply from:'../.etc/srscode-MC.gradle' }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
-tasks.withType(JavaCompile).configureEach {options.encoding = 'UTF-8'}
+java {withSourcesJar()}
 
-reckon {
-    stages('dev', 'rc', 'final')
-    setStageCalc(calcStageFromProp())
-    setScopeCalc(calcScopeFromProp())
-}
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
 checkstyle {
-    setConfig resources.text.fromUri('https://srscode.github.io/checkstyle/srsCode-MC-checkstyle-J16.xml')
-    setReportsDir file("${project.buildDir}/reports/checkstyle")
-    setToolVersion '10.3.1'
+    setConfig resources.text.fromUri('https://srscode.github.io/checkstyle/srsCode-NF-checkstyle-J11+.xml')
+    setReportsDir layout.buildDirectory.get().dir('reports').dir('checkstyle').asFile
+    setToolVersion '10.12.5'
 }
-tasks.withType(Checkstyle) {
-    reports.xml.enabled false
-    reports.html.enabled true
-}
-
-minecraft {
-    mappings channel: 'official', version: project.mc_version
-    runs {
-        client {
-            taskName 'SrsLibClient'
-            workingDirectory project.file('run')
-            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
-            property 'forge.logging.console.level', 'debug'
-            property 'fml.earlyprogresswindow', 'false'
-            mods {self {source sourceSets.main}}
-        }
-        server {
-            taskName 'SrsLibServer'
-            workingDirectory project.file('run')
-            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
-            property 'forge.logging.console.level', 'debug'
-            property 'fml.earlyprogresswindow', 'false'
-            mods {self {source sourceSets.main}}
-        }
-    }
+tasks.withType(Checkstyle).configureEach {
+    it.reports.xml.required = false
+    it.reports.html.required = true
 }
 
-dependencies {
-    minecraft "net.minecraftforge:forge:${project.mc_version}-${project.forge_version}"
-}
+dependencies {implementation "net.neoforged:neoforge:${neo_version}"}
 
-setGroup 'de.srsco'
-archivesBaseName = project.name
 def commonManifest = manifest {
     attributes([
-            'Implementation-Vendor'   : "srsCode",
-            'Implementation-Title'    : "${project.name}",
-            'Implementation-Version'  : "${project.version}",
-            'Build-Jdk'               : "${System.properties['java.vendor']} ${System.properties['java.vm.version']}",
-            'Build-Timestamp'         : java.time.OffsetDateTime.now() as String
+        'Implementation-Vendor'   : "srsCode",
+        'Implementation-Title'    : "${project.name}",
+        'Implementation-Version'  : "${project.version}",
+        'Build-Jdk'               : "${System.properties['java.vendor']} ${System.properties['java.vm.version']}",
+        'Build-Timestamp'         : java.time.OffsetDateTime.now() as String
     ])
 }
 
-jar {
-    from 'LICENCE.txt'
-    manifest.from commonManifest
-    dependsOn('sourceJar')
-}
+tasks.withType(JavaCompile).configureEach {options.encoding = 'UTF-8'}
 
-task sourceJar(type: Jar) {
-    from sourceSets.main.allJava
+tasks.withType(Jar).configureEach {
     from 'LICENCE.txt'
     manifest.from commonManifest
-    classifier = 'sources'
 }
 
 publishing {
     publications {
         mavenJava(MavenPublication) {
             artifact jar
-            artifact sourceJar
+            artifact sourcesJar
 
             version project.version
             groupId = project.group
@@ -93,13 +57,13 @@ publishing {
                 licenses {
                     license {
                         name = 'MIT license'
-                        url = 'http://opensource.org/licenses/MIT'
+                        url = 'https://mit-license.org/'
                         distribution = 'repo'
                     }
                 }
                 scm {
                     url = 'https://github.com/srsCode/srsLib'
-                    connection = 'scm:git:git://github.com/srsCode/srsLib.git'
+                    connection = 'scm:git:https://github.com/srsCode/srsLib.git'
                     developerConnection = 'scm:git:git@github.com:srsCode/srsLib.git'
                 }
                 issueManagement {
