@@ -2,7 +2,7 @@
  * Project      : srsLib
  * File         : Util.java
  *
- * Copyright (c) 2022 srs_bsns (forfrdm [at] gmail.com)
+ * Copyright (c) 2023 srs_bsns (forfrdm [at] gmail.com)
  *
  * The MIT License (MIT)
  *
@@ -35,7 +35,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 
@@ -46,29 +45,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.minecraft.core.DefaultedRegistry;
-import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.chat.CommonComponents;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.stats.StatType;
-import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.sensing.SensorType;
 import net.minecraft.world.entity.ai.village.poi.PoiType;
 import net.minecraft.world.entity.decoration.PaintingVariant;
 import net.minecraft.world.entity.npc.VillagerProfession;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.entity.schedule.Schedule;
 import net.minecraft.world.inventory.MenuType;
@@ -89,7 +81,6 @@ import net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvi
 import net.minecraft.world.level.levelgen.feature.treedecorators.TreeDecoratorType;
 import net.minecraft.world.level.material.Fluid;
 
-import net.neoforged.neoforge.common.I18nExtension;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
 public final class Util
@@ -232,120 +223,6 @@ public final class Util
     public static <T> Optional<ResourceKey<Registry<T>>> getKeyFor(final T obj)
     {
         return RegistryHelper.getRegistryHelper(obj).map(RegistryHelper::key);
-    }
-
-
-    /* Text & Component Helpers */
-
-    /**
-     * <h3>A BiFunction to generate an error message for a missing langkey.</h3>
-     * (If the langkey was not found in the lang file and a fallback was not provided.)
-     * Logs an error as well as returns a Component for in-game feedback.
-     *
-     * @since 0.1.0, MC 1.19.1, 2022.08.08
-     */
-    public static final BiFunction<CharSequence, String, Component> INVALID_LANGKEY = (key, objs) -> {
-        LOGGER.debug("Bad langkey: {}, Using Objects: {}", key, objs);
-        return Component.literal("Bad langkey: " + key + ", Using Objects: " + objs);
-    };
-
-    /**
-     * <h3>Creates a translatable Component for a langkey.</h3>
-     * Uses {@link I18nExtension}
-     *
-     * @param key  A langkey
-     * @return A translatable Component, or a literal Component if the langkey does not exist.
-     *
-     * @since 0.1.0, MC 1.19.1, 2022.08.08
-     */
-    public static Component getTranslation(final String key)
-    {
-        return getTranslation(key, CommonComponents.EMPTY);
-    }
-
-    /**
-     * <h3>Creates a translatable Component for a langkey.</h3>
-     * Uses {@link I18nExtension}
-     *
-     * @param key  A langkey
-     * @param objs Objects to be used in a formatted text string.
-     * @return A translatable Component, or a literal Component if the langkey does not exist.
-     *
-     * @since 0.1.0, MC 1.19.1, 2022.08.08
-     */
-    public static Component getTranslation(final String key, final Object... objs)
-    {
-        return getTranslation(key, CommonComponents.EMPTY, null, objs);
-    }
-
-    /**
-     * <h3>Creates a translatable Component for a langkey using a possibly supplied Component.</h3>
-     * Uses {@link I18nExtension}
-     *
-     * @param component A possible Component to be used for translation (i.e. a {@link Player} display name).
-     * @param key       A langkey
-     * @param objs      Objects to be used in a formatted text string.
-     * @return A translatable Component, or a literal Component if the langkey does not exist.
-     *
-     * @since 0.1.0, MC 1.19.1, 2022.08.08
-     */
-    public static Component getTranslation(final String key, @Nullable final Component component, final Object... objs)
-    {
-        return getTranslation(key, component, null, objs);
-    }
-
-    /**
-     * <h3>Creates a translatable Component for a langkey using a possible supplied Component or uses a fallback string if the langkey does not exist.</h3>
-     * Uses {@link I18nExtension}
-     *
-     * @param component A possible Component to be used for translation (i.e. a {@link Player} display name).
-     * @param key       A langkey
-     * @param objs      Objects to be used in a formatted text string.
-     * @return A translatable Component, or a literal Component if the langkey does not exist.
-     *
-     * @since 0.1.0, MC 1.19.1, 2022.08.08
-     */
-    public static Component getTranslation(final String key, @Nullable final Component component, @Nullable final Component fallback, final Object... objs)
-    {
-        return !I18nExtension.getPattern(key).equals(key)
-            ? component != null ? Component.translatable(key, component, objs) : Component.translatable(key, objs)
-            : fallback  != null ? fallback : INVALID_LANGKEY.apply(key, Arrays.toString(objs));
-    }
-
-
-    /* Misc */
-
-    /**
-     * <h3>A factory method for creating a new DamageSource using a {@link LangKeyBuilder}.</h3>
-     *
-     * <p>The language key will be: &lt;root&gt;.dmgsrc.&lt;name&gt;[.killer]
-     * Where 'root' will generally be a mod ID, 'name' will be the ID of the DamageSource,
-     * and '.killer' will be added if the dead entity had an attacker with the attacker
-     * being passed as a token object.</p>
-     *
-     * @param damageType     A DamageType for the DamageSource.
-     * @param langKeyBuilder The LangKey builder used to generate a langkey from.
-     * @param fallback       A fallback message if the langkey does not exist.
-     * @return               A new DamageSource.
-     *
-     * @since 0.1.0, MC 1.19.1, 2022.08.08
-     */
-    public static DamageSource createDamageSource(final DamageType damageType, final LangKeyBuilder langKeyBuilder, final String fallback)
-    {
-        return new DamageSource(new Holder.Direct<>(damageType))
-        {
-            @Override
-            @Nonnull
-            public Component getLocalizedDeathMessage(@Nonnull final LivingEntity killed)
-            {
-                final var killer = killed.getKillCredit();
-                final var lkb = langKeyBuilder.append(damageType.msgId()).push();
-                final var killedname = killed.getDisplayName();
-                return killer == null
-                    ? getTranslation(lkb.getKey(),                    killedname, fallback != null ? killedname != null ? killedname.copy().append(" " + fallback) : null : null)
-                    : getTranslation(lkb.append("attacked").getKey(), killedname, fallback != null ? killedname != null ? killedname.copy().append(" " + fallback) : null : null, killer);
-            }
-        };
     }
 
 

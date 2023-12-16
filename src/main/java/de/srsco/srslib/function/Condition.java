@@ -2,7 +2,7 @@
  * Project      : srsLib
  * File         : Condition.java
  *
- * Copyright (c) 2022 srs_bsns (forfrdm [at] gmail.com)
+ * Copyright (c) 2023 srs_bsns (forfrdm [at] gmail.com)
  *
  * The MIT License (MIT)
  *
