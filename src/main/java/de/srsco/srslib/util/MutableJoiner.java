@@ -67,7 +67,7 @@ public final class MutableJoiner extends AbstractCollection<CharSequence> implem
 
     public MutableJoiner(final MutableJoiner other)
     {
-        Objects.requireNonNull(other, "MutableJoiner requires a delimiter");
+        Objects.requireNonNull(other, "MutableJoiner required for copy");
         this.delimiter = other.delimiter();
         this.elements  = new ArrayList<>(other.elements());
     }

@@ -7,9 +7,12 @@ plugins {
 }
 if (file('../.etc/srscode-MC.gradle').exists()) { apply from:'../.etc/srscode-MC.gradle' }
 
-java {withSourcesJar()}
+base.archivesName.set lib_name
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+java{
+    withSourcesJar()
+    toolchain.languageVersion = JavaLanguageVersion.of(17)
+}
 
 checkstyle {
     setConfig resources.text.fromUri('https://srscode.github.io/checkstyle/srsCode-NF-checkstyle-J11+.xml')
@@ -23,21 +26,31 @@ tasks.withType(Checkstyle).configureEach {
 
 dependencies {implementation "net.neoforged:neoforge:${neo_version}"}
 
-def commonManifest = manifest {
-    attributes([
+tasks.withType(JavaCompile).configureEach {options.encoding = 'UTF-8'}
+
+tasks.withType(Jar).configureEach {
+    from 'LICENCE.txt'
+    manifest.attributes([
         'Implementation-Vendor'   : "srsCode",
-        'Implementation-Title'    : "${project.name}",
+        'Implementation-Title'    : "${base.archivesName.get()}",
         'Implementation-Version'  : "${project.version}",
         'Build-Jdk'               : "${System.properties['java.vendor']} ${System.properties['java.vm.version']}",
         'Build-Timestamp'         : java.time.OffsetDateTime.now() as String
     ])
 }
 
-tasks.withType(JavaCompile).configureEach {options.encoding = 'UTF-8'}
+// A task to partially clean build outputs while leaving cached artifacts alone
+tasks.create('cleanOutputs', Delete).configure {cotask ->
+    tasks.getByName('assemble').configure {mustRunAfter(cotask)}
+    doFirst {targetFiles.each {project.logger.lifecycle "cleaning: $it.canonicalPath"}}
+    delete(tasks.withType(JavaCompile).collect {it.outputs.files.files}.flatten())
+    var libs = layout.buildDirectory.get().getAsFile().toPath().resolve("libs").toFile()
+    if (libs.exists()) {delete(libs.listFiles())}
+}
 
-tasks.withType(Jar).configureEach {
-    from 'LICENCE.txt'
-    manifest.from commonManifest
+// A task to execute a clean build
+tasks.create('cleanBuild') {
+    dependsOn 'cleanOutputs', 'build'
 }
 
 publishing {
@@ -48,10 +61,10 @@ publishing {
 
             version project.version
             groupId = project.group
-            artifactId = project.archivesBaseName
+            artifactId = base.archivesName.get()
 
             pom {
-                name = project.name
+                name = base.archivesName.get()
                 description = 'A common Minecraft mod library for srsCode mods.'
                 url = 'https://github.com/srsCode/srsLib'
                 licenses {

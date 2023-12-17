@@ -12,7 +12,7 @@ plugins {
 
 reckon {
     stages 'dev', 'rc', 'final'
-    setDefaultInferredScope 'patch'
+    setDefaultInferredScope 'minor'
     setScopeCalc calcScopeFromProp()
     setStageCalc calcStageFromProp()
 }

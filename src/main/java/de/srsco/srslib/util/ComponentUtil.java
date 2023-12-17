@@ -52,6 +52,7 @@ import net.neoforged.neoforge.common.I18nExtension;
 public final class ComponentUtil
 {
     private static final Logger LOGGER = Util.getLogger(ComponentUtil.class);
+    private static final String EMPTY_STRING = "";
 
     private ComponentUtil() {}
 
@@ -128,44 +129,8 @@ public final class ComponentUtil
      */
     public static Component getTranslation(final String key, @Nullable final Component component, @Nullable final Component fallback, final Object... objs)
     {
-        return I18nExtension.getPattern(key).equals(key)
+        return I18nExtension.getPattern(key, () -> EMPTY_STRING).equals(EMPTY_STRING)
             ? fallback  != null ? fallback : INVALID_LANGKEY.apply(key, Arrays.toString(objs))
             : component != null ? Component.translatable(key, component, objs) : Component.translatable(key, objs);
-    }
-
-
-    /* Misc */
-
-    /**
-     * <h3>A factory method for creating a new DamageSource using a {@link Util.LangKeyBuilder}.</h3>
-     *
-     * <p>The language key will be: &lt;root&gt;.dmgsrc.&lt;name&gt;[.killer]
-     * Where 'root' will generally be a mod ID, 'name' will be the ID of the DamageSource,
-     * and '.killer' will be added if the dead entity had an attacker with the attacker
-     * being passed as a token object.</p>
-     *
-     * @param damageType     A DamageType for the DamageSource.
-     * @param langKeyBuilder The LangKey builder used to generate a langkey from.
-     * @param fallback       A fallback message if the langkey does not exist.
-     * @return               A new DamageSource.
-     *
-     * @since 0.1.0, MC 1.19.1, 2022.08.08
-     */
-    public static DamageSource createDamageSource(final DamageType damageType, final Util.LangKeyBuilder langKeyBuilder, final String fallback)
-    {
-        return new DamageSource(new Holder.Direct<>(damageType))
-        {
-            @Override
-            @Nonnull
-            public Component getLocalizedDeathMessage(@Nonnull final LivingEntity killed)
-            {
-                final var killer = killed.getKillCredit();
-                final var lkb = langKeyBuilder.append(damageType.msgId()).push();
-                final var killedname = killed.getDisplayName();
-                return killer == null
-                    ? getTranslation(lkb.getKey(),                    killedname, fallback != null ? killedname != null ? killedname.copy().append(" " + fallback) : null : null)
-                    : getTranslation(lkb.append("attacked").getKey(), killedname, fallback != null ? killedname != null ? killedname.copy().append(" " + fallback) : null : null, killer);
-            }
-        };
     }
 }
