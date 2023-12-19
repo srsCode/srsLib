@@ -30,9 +30,8 @@
 package de.srsco.srslib.util;
 
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -41,6 +40,7 @@ import java.util.stream.Collector;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -127,7 +127,7 @@ public final class Util
      */
     public static Optional<ResourceLocation> getResLoc(final Block block)
     {
-        return BuiltInRegistries.BLOCK.getResourceKey(block).map(ResourceKey::location);
+        return getRegistryFor(Block.class).flatMap(rh -> rh.getResourceKey(block).map(ResourceKey::location));
     }
 
     /**
@@ -141,7 +141,7 @@ public final class Util
      */
     public static Optional<ResourceLocation> getResLoc(final Fluid fluid)
     {
-        return BuiltInRegistries.FLUID.getResourceKey(fluid).map(ResourceKey::location);
+        return getRegistryFor(Fluid.class).flatMap(rh -> rh.getResourceKey(fluid).map(ResourceKey::location));
     }
 
     /**
@@ -155,7 +155,35 @@ public final class Util
      */
     public static Optional<ResourceLocation> getResLoc(final Item item)
     {
-        return BuiltInRegistries.ITEM.getResourceKey(item).map(ResourceKey::location);
+        return getRegistryFor(Item.class).flatMap(rh -> rh.getResourceKey(item).map(ResourceKey::location));
+    }
+
+    /**
+     * <h3>A helper method to get a {@link ResourceLocation} for a {@link Feature}.</h3>
+     * Maps a ResourceKey to a ResourceLocation.
+     *
+     * @param feature The Biome to get a ResourceLocation for.
+     * @return The ResourceLocation.
+     *
+     * @since 0.1.0, MC 1.19.1, 2022.08.08
+     */
+    public static Optional<ResourceLocation> getResLoc(final Feature<?> feature)
+    {
+        return getRegistryFor(Feature.class).flatMap(rh -> rh.getResourceKey(feature).map(ResourceKey::location));
+    }
+
+    /**
+     * <h3>A helper method to get a {@link ResourceLocation} for a {@link EntityType}.</h3>
+     * Maps a ResourceKey to a ResourceLocation as {@link DefaultedRegistry#getKey} returns the registry default key instead of null.
+     *
+     * @param entityType The Biome to get a ResourceLocation for.
+     * @return The ResourceLocation.
+     *
+     * @since 0.1.0, MC 1.19.1, 2022.08.08
+     */
+    public static Optional<ResourceLocation> getResLoc(final EntityType<?> entityType)
+    {
+        return getRegistryFor(EntityType.class).flatMap(rh -> rh.getResourceKey(entityType).map(ResourceKey::location));
     }
 
     /**
@@ -174,63 +202,159 @@ public final class Util
     }
 
     /**
-     * <h3>A helper method to get a {@link ResourceLocation} for a {@link Feature}.</h3>
-     * Maps a ResourceKey to a ResourceLocation.
-     *
-     * @param feature The Biome to get a ResourceLocation for.
-     * @return The ResourceLocation.
-     *
-     * @since 0.1.0, MC 1.19.1, 2022.08.08
-     */
-    public static Optional<ResourceLocation> getResLoc(final Feature<?> feature)
-    {
-        return BuiltInRegistries.FEATURE.getResourceKey(feature).map(ResourceKey::location);
-    }
-
-    /**
-     * <h3>A helper method to get a {@link ResourceLocation} for a {@link EntityType}.</h3>
-     * Maps a ResourceKey to a ResourceLocation as {@link DefaultedRegistry#getKey} returns the registry default key instead of null.
-     *
-     * @param entityType The Biome to get a ResourceLocation for.
-     * @return The ResourceLocation.
-     *
-     * @since 0.1.0, MC 1.19.1, 2022.08.08
-     */
-    public static Optional<ResourceLocation> getResLoc(final EntityType<?> entityType)
-    {
-        return BuiltInRegistries.ENTITY_TYPE.getResourceKey(entityType).map(ResourceKey::location);
-    }
-
-    /**
-     * <h3>A helper to get the associated {@link Registry} for an object like a Block or Item.</h3>
-     *
-     * @param obj An object to look up a IForgeRegistry for.
-     * @param <T> The type of object.
-     * @return    A registry instance associated with the object if it exist.
-     */
-    public static <T> Optional<Registry<T>> getRegistryFor(final T obj)
-    {
-        return RegistryHelper.getRegistryHelper(obj).map(RegistryHelper::registry).map(Supplier::get);
-    }
-
-    /**
      * <h3>A helper to get the associated {@link ResourceKey} of a {@link Registry} for an object like a Block or Item.</h3>
      *
      * @param obj An object to look up a ResourceKey for.
      * @param <T> The type of object.
      * @return    A ResourceKey of a registry associated with the object if it exist.
      */
-    public static <T> Optional<ResourceKey<Registry<T>>> getKeyFor(final T obj)
+    @SuppressWarnings("unchecked")
+    public static <T> Optional<ResourceKey<Registry<T>>> getKeyFor(final Class<T> obj)
     {
-        return RegistryHelper.getRegistryHelper(obj).map(RegistryHelper::key);
+        return getRegistryFor(obj).map(Registry::key).map(key -> (ResourceKey<Registry<T>>) key);
     }
 
+    /**
+     * <h3>A helper to get the associated {@link Registry} for an object like a Block or Item.</h3>
+     *
+     * @param type An object to look up a IForgeRegistry for.
+     * @param <T> The type of object.
+     * @return    A registry instance associated with the object if it exist.
+     */
+    public static <T> Optional<Registry<T>> getRegistryFor(final Class<T> type)
+    {
+        return RegistryHelper.getFromType(type);
+    }
+
+    public static final class Identity
+    {
+        private Identity() {}
+
+        /**
+         * <h3>A Helper to check if two {@link ResourceKey}s are equal base on their internal data.</h3>
+         *
+         * @param first  The first ResourceKey
+         * @param second The second ResourceKey
+         * @return       true if the ResourceKeys are equal
+         */
+        public static boolean isEqual(final ResourceKey<?> first, final ResourceKey<?> second)
+        {
+            return first.registry().equals(second.registry()) && first.location().equals(second.location());
+        }
+
+        /**
+         * <h3>A Helper to generate a hashCode for a {@link ResourceKey} from its internal data.</h3>
+         *
+         * @param key The ResourceKey
+         * @return    The hashCode
+         */
+        public static int getResKeyHashCode(final ResourceKey<?> key)
+        {
+            return 31 * key.registry().hashCode() + key.location().hashCode();
+        }
+    }
+
+    /**
+     * <h3>A helper class to get the associated {@link Registry} for an object like a Block or Item.</h3>
+     *
+     * @since 2.0.0, MC 1.20.4, 2023.12.18 - INTERNAL
+     */
+    private static final class RegistryHelper
+    {
+
+        /**
+         * Use a List instead of a HashSet because we don't want RegistryEntry#hashCode being called from a static context, which will cause
+         * the associated Registry to be supplied to get it's RegistryKey. This could cause a ClassNotFoundException in a dev environment
+         * since this will likely load before Minecraft classes.
+         */
+        private static final List<RegistryEntry<?>> ENTRIES;
+
+        static
+        {
+            ENTRIES = ImmutableList.<RegistryEntry<?>>builder().add(
+                RegistryEntry.make(Block.class,                  () -> BuiltInRegistries.BLOCK),
+                RegistryEntry.make(Fluid.class,                  () -> BuiltInRegistries.FLUID),
+                RegistryEntry.make(Item.class,                   () -> BuiltInRegistries.ITEM),
+                RegistryEntry.make(MobEffect.class,              () -> BuiltInRegistries.MOB_EFFECT),
+                RegistryEntry.make(Potion.class,                 () -> BuiltInRegistries.POTION),
+                RegistryEntry.make(Attribute.class,              () -> BuiltInRegistries.ATTRIBUTE),
+                RegistryEntry.make(StatType.class,               () -> BuiltInRegistries.STAT_TYPE),
+                RegistryEntry.make(SoundEvent.class,             () -> BuiltInRegistries.SOUND_EVENT),
+                RegistryEntry.make(Enchantment.class,            () -> BuiltInRegistries.ENCHANTMENT),
+                RegistryEntry.make(EntityType.class,             () -> BuiltInRegistries.ENTITY_TYPE),
+                RegistryEntry.make(PaintingVariant.class,        () -> BuiltInRegistries.PAINTING_VARIANT),
+                RegistryEntry.make(ParticleType.class,           () -> BuiltInRegistries.PARTICLE_TYPE),
+                RegistryEntry.make(MenuType.class,               () -> BuiltInRegistries.MENU),
+                RegistryEntry.make(BlockEntityType.class,        () -> BuiltInRegistries.BLOCK_ENTITY_TYPE),
+                RegistryEntry.make(RecipeType.class,             () -> BuiltInRegistries.RECIPE_TYPE),
+                RegistryEntry.make(RecipeSerializer.class,       () -> BuiltInRegistries.RECIPE_SERIALIZER),
+                RegistryEntry.make(VillagerProfession.class,     () -> BuiltInRegistries.VILLAGER_PROFESSION),
+                RegistryEntry.make(PoiType.class,                () -> BuiltInRegistries.POINT_OF_INTEREST_TYPE),
+                RegistryEntry.make(MemoryModuleType.class,       () -> BuiltInRegistries.MEMORY_MODULE_TYPE),
+                RegistryEntry.make(SensorType.class,             () -> BuiltInRegistries.SENSOR_TYPE),
+                RegistryEntry.make(Schedule.class,               () -> BuiltInRegistries.SCHEDULE),
+                RegistryEntry.make(Activity.class,               () -> BuiltInRegistries.ACTIVITY),
+                RegistryEntry.make(WorldCarver.class,            () -> BuiltInRegistries.CARVER),
+                RegistryEntry.make(Feature.class,                () -> BuiltInRegistries.FEATURE),
+                RegistryEntry.make(ChunkStatus.class,            () -> BuiltInRegistries.CHUNK_STATUS),
+                RegistryEntry.make(BlockStateProviderType.class, () -> BuiltInRegistries.BLOCKSTATE_PROVIDER_TYPE),
+                RegistryEntry.make(FoliagePlacerType.class,      () -> BuiltInRegistries.FOLIAGE_PLACER_TYPE),
+                RegistryEntry.make(TreeDecoratorType.class,      () -> BuiltInRegistries.TREE_DECORATOR_TYPE)
+            ).build();
+        }
+
+        @SuppressWarnings("unchecked")
+        public static <T> Optional<Registry<T>> getFromType(final Class<T> type)
+        {
+            return ENTRIES.stream()
+                .filter(entry -> entry.type().isAssignableFrom(type))
+                .findFirst()
+                .map(RegistryEntry::registry)
+                .map(Supplier::get)
+                .map(registry -> (Registry<T>) registry);
+        }
+
+        /**
+         * <h3>An entry class linking a Class to an associated {@link Registry} for an object like a Block or Item.</h3>
+         *
+         * @param registry A Supplier for the Registry instance.
+         * @param <T>      The object type of the registry.
+         */
+        public record RegistryEntry<T>(Class<? super T> type, Supplier<Registry<T>> registry)
+        {
+            /**
+             * The {@link ResourceKey} of the {@link Registry} is sufficient in determining equality.
+             */
+            @Override
+            public boolean equals(final Object obj)
+            {
+                return this == obj || obj instanceof RegistryEntry<?> other && Identity.isEqual(registry().get().key(), other.registry().get().key());
+            }
+
+            /**
+             * The {@link ResourceKey} of the {@link Registry} is sufficient in calculating the hashCode.
+             */
+            @Override
+            public int hashCode()
+            {
+                return Identity.getResKeyHashCode(registry().get().key());
+            }
+
+            private static <T> RegistryEntry<T> make(final Class<? super T> type, final Supplier<Registry<T>> registry)
+            {
+                return new RegistryEntry<>(type, registry);
+            }
+        }
+    }
+
+
+    /* Language keys */
 
     /**
      * <h3>A helper class used for generating language keys for localisation.</h3>
      *
      * @param root    The root element of a key. (Generally a mod Id)
-     * @param context A context foe the key. (command, block, item, biome, etc.)
+     * @param context A context for the key. (command, block, item, biome, etc.)
      * @param stack   A stack of additional key elements that have been {@link #push}ed.
      * @param buffer  A buffer of key elements that have not been push to the stack that is cleared if a key is built.
      *
@@ -388,64 +512,6 @@ public final class Util
             {
                 return context;
             }
-
-        }
-    }
-
-    /**
-     * <h3>A helper class to look up the associated {@link ResourceKey} or {@link Registry} for an object like a Block or Item.</h3>
-     *
-     * @param key      The Resource key for the registry.
-     * @param registry A Supplier for the IForgeRegistry instance.
-     * @param <T>      The object type of the registry.
-     *
-     * @since 0.1.0, MC 1.19.1, 2022.08.08 - INTERNAL
-     */
-    private record RegistryHelper<T>(ResourceKey<Registry<T>> key, Supplier<Registry<T>> registry)
-    {
-        private static final Map<Class<?>, RegistryHelper<?>> HELPERS = new HashMap<>();
-
-        static
-        {
-            HELPERS.put(Block.class,                  make(Registries.BLOCK,                     () -> BuiltInRegistries.BLOCK));
-            HELPERS.put(Fluid.class,                  make(Registries.FLUID,                     () -> BuiltInRegistries.FLUID));
-            HELPERS.put(Item.class,                   make(Registries.ITEM,                      () -> BuiltInRegistries.ITEM));
-            HELPERS.put(MobEffect.class,              make(Registries.MOB_EFFECT,                () -> BuiltInRegistries.MOB_EFFECT));
-            HELPERS.put(Potion.class,                 make(Registries.POTION,                    () -> BuiltInRegistries.POTION));
-            HELPERS.put(Attribute.class,              make(Registries.ATTRIBUTE,                 () -> BuiltInRegistries.ATTRIBUTE));
-            HELPERS.put(StatType.class,               make(Registries.STAT_TYPE,                 () -> BuiltInRegistries.STAT_TYPE));
-            HELPERS.put(SoundEvent.class,             make(Registries.SOUND_EVENT,               () -> BuiltInRegistries.SOUND_EVENT));
-            HELPERS.put(Enchantment.class,            make(Registries.ENCHANTMENT,               () -> BuiltInRegistries.ENCHANTMENT));
-            HELPERS.put(EntityType.class,             make(Registries.ENTITY_TYPE,               () -> BuiltInRegistries.ENTITY_TYPE));
-            HELPERS.put(PaintingVariant.class,        make(Registries.PAINTING_VARIANT,          () -> BuiltInRegistries.PAINTING_VARIANT));
-            HELPERS.put(ParticleType.class,           make(Registries.PARTICLE_TYPE,             () -> BuiltInRegistries.PARTICLE_TYPE));
-            HELPERS.put(MenuType.class,               make(Registries.MENU,                      () -> BuiltInRegistries.MENU));
-            HELPERS.put(BlockEntityType.class,        make(Registries.BLOCK_ENTITY_TYPE,         () -> BuiltInRegistries.BLOCK_ENTITY_TYPE));
-            HELPERS.put(RecipeType.class,             make(Registries.RECIPE_TYPE,               () -> BuiltInRegistries.RECIPE_TYPE));
-            HELPERS.put(RecipeSerializer.class,       make(Registries.RECIPE_SERIALIZER,         () -> BuiltInRegistries.RECIPE_SERIALIZER));
-            HELPERS.put(VillagerProfession.class,     make(Registries.VILLAGER_PROFESSION,       () -> BuiltInRegistries.VILLAGER_PROFESSION));
-            HELPERS.put(PoiType.class,                make(Registries.POINT_OF_INTEREST_TYPE,    () -> BuiltInRegistries.POINT_OF_INTEREST_TYPE));
-            HELPERS.put(MemoryModuleType.class,       make(Registries.MEMORY_MODULE_TYPE,        () -> BuiltInRegistries.MEMORY_MODULE_TYPE));
-            HELPERS.put(SensorType.class,             make(Registries.SENSOR_TYPE,               () -> BuiltInRegistries.SENSOR_TYPE));
-            HELPERS.put(Schedule.class,               make(Registries.SCHEDULE,                  () -> BuiltInRegistries.SCHEDULE));
-            HELPERS.put(Activity.class,               make(Registries.ACTIVITY,                  () -> BuiltInRegistries.ACTIVITY));
-            HELPERS.put(WorldCarver.class,            make(Registries.CARVER,                    () -> BuiltInRegistries.CARVER));
-            HELPERS.put(Feature.class,                make(Registries.FEATURE,                   () -> BuiltInRegistries.FEATURE));
-            HELPERS.put(ChunkStatus.class,            make(Registries.CHUNK_STATUS,              () -> BuiltInRegistries.CHUNK_STATUS));
-            HELPERS.put(BlockStateProviderType.class, make(Registries.BLOCK_STATE_PROVIDER_TYPE, () -> BuiltInRegistries.BLOCKSTATE_PROVIDER_TYPE));
-            HELPERS.put(FoliagePlacerType.class,      make(Registries.FOLIAGE_PLACER_TYPE,       () -> BuiltInRegistries.FOLIAGE_PLACER_TYPE));
-            HELPERS.put(TreeDecoratorType.class,      make(Registries.TREE_DECORATOR_TYPE,       () -> BuiltInRegistries.TREE_DECORATOR_TYPE));
-        }
-
-        private static <T> RegistryHelper<T> make(final ResourceKey<Registry<T>> key, final Supplier<Registry<T>> registry)
-        {
-            return new RegistryHelper<>(key, registry);
-        }
-
-        @SuppressWarnings("unchecked")
-        private static <T> Optional<RegistryHelper<T>> getRegistryHelper(final T obj)
-        {
-            return HELPERS.entrySet().stream().filter(e -> e.getKey().isAssignableFrom(obj.getClass())).findFirst().map(rh -> ((RegistryHelper<T>) rh.getValue()));
         }
     }
 }
