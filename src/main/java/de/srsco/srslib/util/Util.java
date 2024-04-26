@@ -106,10 +106,10 @@ public final class Util
      */
     public static Logger getLogger(@Nonnull final Object obj)
     {
-        return switch (obj.getClass().getName()) {
-            case    "java.lang.String" -> LoggerFactory.getLogger((String) obj);
-            case    "java.lang.Class"  -> LoggerFactory.getLogger((Class<?>) obj);
-            default                    -> LoggerFactory.getLogger(obj.getClass());
+        return switch (obj) {
+            case String s   -> LoggerFactory.getLogger(s);
+            case Class<?> c -> LoggerFactory.getLogger(c);
+            default         -> LoggerFactory.getLogger(obj.getClass());
         };
     }
 
