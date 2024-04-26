@@ -135,20 +135,12 @@ public final class SLCollectors
     public static <A, R> Function<A, Optional<R>> wrapFinisher(@Nonnull final Function<A, R> finisher)
     {
         Objects.requireNonNull(finisher, "A finisher function is required for wrapping.");
-        return obj -> obj instanceof Iterable<?> it && !it.iterator().hasNext() ||
-            // Perhaps better would be cs.toString().isBlank() as it would also
-            // ignore whitespace, however, that process would be more expensive.
-            obj instanceof CharSequence cs && cs.isEmpty() ||
-            obj instanceof StringJoiner sj && sj.length() == 0
-            ? Optional.empty()
-            : Optional.ofNullable(finisher.apply(obj));
-
-        //return obj -> switch (obj) {
-        //    case Iterable<?>  it && !it.iterator().hasNext() -> Optional.empty();
-        //    case CharSequence cs && cs.isEmpty()             -> Optional.empty();
-        //    case StringJoiner sj && sj.length() == 0         -> Optional.empty();
-        //    default                                          -> Optional.ofNullable(finisher.apply(obj));
-        //};
+        return obj -> switch (obj) {
+            case Iterable<?>  it when !it.iterator().hasNext() -> Optional.empty();
+            case CharSequence cs when cs.isEmpty()             -> Optional.empty();
+            case StringJoiner sj when sj.length() == 0         -> Optional.empty();
+            default                                            -> Optional.ofNullable(finisher.apply(obj));
+        };
     }
 
     /**
