@@ -32,6 +32,7 @@ package de.srsco.srslib.function;
 import java.util.function.Supplier;
 
 
+@SuppressWarnings("WeakerAccess")
 public final class Dummies
 {
     private Dummies() {}

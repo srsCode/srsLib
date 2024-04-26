@@ -37,6 +37,7 @@ import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
 
+@SuppressWarnings("unused")
 public sealed interface Condition<A, B, C> extends Evaluator
 {
     Supplier<A> first();

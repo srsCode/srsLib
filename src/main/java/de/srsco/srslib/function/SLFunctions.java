@@ -35,6 +35,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 
+@SuppressWarnings("unused")
 public final class SLFunctions
 {
     private SLFunctions() {}

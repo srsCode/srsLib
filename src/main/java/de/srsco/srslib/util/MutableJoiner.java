@@ -45,7 +45,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-
+@SuppressWarnings("WeakerAccess")
 public final class MutableJoiner extends AbstractCollection<CharSequence> implements CharSequence
 {
     private static final String EMPTY_STRING = "";

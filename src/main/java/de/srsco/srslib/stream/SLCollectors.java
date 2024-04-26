@@ -42,6 +42,7 @@ import java.util.stream.Collector;
 import javax.annotation.Nonnull;
 
 
+@SuppressWarnings({"unused", "WeakerAccess"})
 public final class SLCollectors
 {
     private SLCollectors() {}

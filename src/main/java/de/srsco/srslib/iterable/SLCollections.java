@@ -42,6 +42,7 @@ import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
 
+@SuppressWarnings("unused")
 public final class SLCollections
 {
     private SLCollections() {}

@@ -39,6 +39,7 @@ import java.util.Objects;
  * @param <B> the Type of the second object.
  * @param <C> the Type of the third object.
  */
+@SuppressWarnings("unused")
 @FunctionalInterface
 public interface TriConsumer<A, B, C>
 {
