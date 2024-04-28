@@ -3,9 +3,7 @@ plugins {
     id 'maven-publish'
     id 'idea'
     id 'checkstyle'
-    id 'net.neoforged.gradle.userdev' version '7.0.+'
 }
-if (file('../.etc/srscode-MC.gradle').exists()) { apply from:'../.etc/srscode-MC.gradle' }
 
 base.archivesName.set lib_name
 
@@ -15,7 +13,7 @@ java{
 }
 
 checkstyle {
-    setConfig resources.text.fromUri('https://srscode.github.io/checkstyle/srsCode-NF-checkstyle-J11+.xml')
+    setConfig resources.text.fromUri('https://srscode.github.io/checkstyle/srsCode-checkstyle-J11+.xml')
     setReportsDir layout.buildDirectory.get().dir('reports').dir('checkstyle').asFile
     setToolVersion '10.12.5'
 }
@@ -24,7 +22,9 @@ tasks.withType(Checkstyle).configureEach {
     it.reports.html.required = true
 }
 
-dependencies {implementation (group:'net.neoforged', name:'neoforge', version:"${neo_version}")}
+repositories {mavenCentral()}
+
+dependencies {compileOnly(group:'org.jetbrains', name:'annotations', version:'24.+')}
 
 tasks.withType(JavaCompile).configureEach {options.encoding = 'UTF-8'}
 
