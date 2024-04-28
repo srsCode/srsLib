@@ -2,7 +2,7 @@
  * Project      : srsLib
  * File         : ComponentUtil.java
  *
- * Copyright (c) 2023 srs_bsns (forfrdm [at] gmail.com)
+ * Copyright (c) 2024 srs_bsns (forfrdm [at] gmail.com)
  *
  * The MIT License (MIT)
  *
@@ -36,6 +36,7 @@ import java.util.function.BiFunction;
 import javax.annotation.Nullable;
 
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
@@ -46,7 +47,7 @@ import net.neoforged.neoforge.common.I18nExtension;
 @SuppressWarnings({"unused", "WeakerAccess"})
 public final class ComponentUtil
 {
-    private static final Logger LOGGER = Util.getLogger(ComponentUtil.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ComponentUtil.class);
     private static final String EMPTY_STRING = "";
 
     private ComponentUtil() {}
