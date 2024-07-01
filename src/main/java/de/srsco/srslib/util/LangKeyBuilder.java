@@ -36,8 +36,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * <h3>A helper class used for generating language keys for localisation.</h3>
@@ -48,8 +48,8 @@ import org.jetbrains.annotations.Nullable;
  * @param buffer  A buffer of key elements that have not been push to the stack that is cleared if a key is built.
  * @since 0.1.0, MC 1.19.1, 2022.08.08
  */
-@SuppressWarnings({"unused", "WeakerAccess"})
-public record LangKeyBuilder(@NotNull Supplier<String> root, @NotNull Supplier<String> context, MutableJoiner stack, MutableJoiner buffer) implements CharSequence
+@SuppressWarnings("unused")
+public record LangKeyBuilder(@Nonnull Supplier<String> root, @Nonnull Supplier<String> context, MutableJoiner stack, MutableJoiner buffer) implements CharSequence
 {
 
     private static final Collector<CharSequence, MutableJoiner, Optional<String>> OPTIONAL_COLLECTOR = Collector.of(
@@ -83,8 +83,9 @@ public record LangKeyBuilder(@NotNull Supplier<String> root, @NotNull Supplier<S
         return toString().charAt(index);
     }
 
+    @Nonnull
     @Override
-    public @NotNull CharSequence subSequence(final int start, final int end)
+    public CharSequence subSequence(final int start, final int end)
     {
         return toString().subSequence(start, end);
     }
@@ -105,8 +106,9 @@ public record LangKeyBuilder(@NotNull Supplier<String> root, @NotNull Supplier<S
         return Objects.hash(toString());
     }
 
+    @Nonnull
     @Override
-    public @NotNull String toString()
+    public String toString()
     {
         return path()
             .map(path -> String.join(".", root.get(), context.get(), path))

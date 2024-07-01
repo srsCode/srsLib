@@ -42,9 +42,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 @SuppressWarnings("WeakerAccess")
 public final class MutableJoiner extends AbstractCollection<CharSequence> implements CharSequence
@@ -136,8 +135,9 @@ public final class MutableJoiner extends AbstractCollection<CharSequence> implem
 
     /* CharSequence @Overrides */
 
+    @Nonnull
     @Override
-    public @NotNull String toString()
+    public String toString()
     {
         return elements.size() == 0 ? EMPTY_STRING : String.join(delimiter, elements);
     }
@@ -148,8 +148,9 @@ public final class MutableJoiner extends AbstractCollection<CharSequence> implem
         return elements.size() == 0 ? 0 : toString().length();
     }
 
+    @Nonnull
     @Override
-    public @NotNull CharSequence subSequence(final int start, final int end)
+    public CharSequence subSequence(final int start, final int end)
     {
         return toString().subSequence(start, end);
     }
@@ -190,7 +191,7 @@ public final class MutableJoiner extends AbstractCollection<CharSequence> implem
     }
 
     @Override
-    public boolean addAll(@NotNull final Collection<? extends CharSequence> other)
+    public boolean addAll(@Nonnull final Collection<? extends CharSequence> other)
     {
         final var size = size();
         return pushAll(other.toArray(CharSequence[]::new)).size() > size;
@@ -203,7 +204,7 @@ public final class MutableJoiner extends AbstractCollection<CharSequence> implem
     }
 
     @Override
-    public boolean removeAll(@NotNull final Collection<?> c)
+    public boolean removeAll(@Nonnull final Collection<?> c)
     {
         return false;
     }
@@ -226,32 +227,35 @@ public final class MutableJoiner extends AbstractCollection<CharSequence> implem
         return elements.contains(o);
     }
 
+    @Nonnull
     @Override
-    public Object @NotNull [] toArray()
+    public Object[] toArray()
     {
         return elements.toArray();
     }
 
+    @Nonnull
     @Override
-    public <T> T @NotNull [] toArray(final T @NotNull [] a)
+    public <T> T[] toArray(@Nonnull final T[] a)
     {
         return elements.toArray(a);
     }
 
     @Override
-    public boolean containsAll(final @NotNull Collection<?> c)
+    public boolean containsAll(@Nonnull final Collection<?> c)
     {
         return elements.containsAll(c);
     }
 
     @Override
-    public boolean retainAll(final @NotNull Collection<?> c)
+    public boolean retainAll(@Nonnull final Collection<?> c)
     {
         return elements.retainAll(c);
     }
 
+    @Nonnull
     @Override
-    public @NotNull Iterator<CharSequence> iterator()
+    public Iterator<CharSequence> iterator()
     {
         return elements.iterator();
     }

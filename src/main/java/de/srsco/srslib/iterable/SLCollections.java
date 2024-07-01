@@ -39,7 +39,7 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.jetbrains.annotations.NotNull;
+import javax.annotation.Nonnull;
 
 
 @SuppressWarnings("unused")
@@ -72,7 +72,7 @@ public final class SLCollections
      * @since 0.1.0, MC 1.19.1, 2022.08.08
      */
     @SafeVarargs
-    public static <T> ArrayList<T> toArrayList(final @NotNull Iterable<? extends T>... inputs)
+    public static <T> ArrayList<T> toArrayList(@Nonnull final Iterable<? extends T>... inputs)
     {
         return merge(ArrayList::new, inputs);
     }
@@ -89,8 +89,8 @@ public final class SLCollections
      * @since 0.1.0, MC 1.19.1, 2022.08.08
      */
     @SafeVarargs
-    public static <T, C extends Collection<T>> C merge(final @NotNull Supplier<? extends C> collector,
-                                                       final @NotNull Iterable<? extends T>... inputs)
+    public static <T, C extends Collection<T>> C merge(@Nonnull final Supplier<? extends C> collector,
+                                                       @Nonnull final Iterable<? extends T>... inputs)
     {
         Objects.requireNonNull(collector, "A Collection must be provided for the merger.");
         Objects.requireNonNull(inputs, "Input Iterables can not be null.");
@@ -115,10 +115,10 @@ public final class SLCollections
      *
      * @since 0.1.0, MC 1.19.1, 2022.08.08
      */
-    public static <T, C extends Collection<T>, R> R merge(final @NotNull C input1,
-                                                          final @NotNull C input2,
-                                                          final @NotNull BinaryOperator<C> merger,
-                                                          final @NotNull Function<C, R> finisher)
+    public static <T, C extends Collection<T>, R> R merge(@Nonnull final C input1,
+                                                          @Nonnull final C input2,
+                                                          @Nonnull final BinaryOperator<C> merger,
+                                                          @Nonnull final Function<C, R> finisher)
     {
         Objects.requireNonNull(input1, "Input collection can not be null.");
         Objects.requireNonNull(input2, "Input collection can not be null.");
@@ -134,9 +134,9 @@ public final class SLCollections
      *
      * @since 0.1.0, MC 1.19.1, 2022.08.08
      */
-    public static <T, C extends Collection<T>> C merge(final @NotNull C input1,
-                                                       final @NotNull C input2,
-                                                       final @NotNull BinaryOperator<C> merger)
+    public static <T, C extends Collection<T>> C merge(@Nonnull final C input1,
+                                                       @Nonnull final C input2,
+                                                       @Nonnull final BinaryOperator<C> merger)
     {
         return merge(input1, input2, merger, Function.identity());
     }
@@ -153,8 +153,8 @@ public final class SLCollections
      * @since 0.1.0, MC 1.19.1, 2022.08.08
      */
     @SafeVarargs
-    public static <T, C extends Collection<T>> Collection<T> mergeToUnmodifiable(final @NotNull Supplier<? extends C> collector,
-                                                                                 final @NotNull C... inputs)
+    public static <T, C extends Collection<T>> Collection<T> mergeToUnmodifiable(@Nonnull final Supplier<? extends C> collector,
+                                                                                 @Nonnull final C... inputs)
     {
         return Collections.unmodifiableCollection(merge(collector, inputs));
     }
@@ -186,7 +186,7 @@ public final class SLCollections
      *
      * @since 0.1.0, MC 1.19.1, 2022.08.08
      */
-    public static <T, C extends Collection<T>> BinaryOperator<C> mergeNew(final @NotNull Supplier<? extends C> collector)
+    public static <T, C extends Collection<T>> BinaryOperator<C> mergeNew(@Nonnull final Supplier<? extends C> collector)
     {
         Objects.requireNonNull(collector, "A Collection must be provided for the merger function.");
         return (input1, input2) -> {

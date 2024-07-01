@@ -39,7 +39,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 
-import org.jetbrains.annotations.NotNull;
+import javax.annotation.Nonnull;
 
 
 @SuppressWarnings({"unused", "WeakerAccess"})
@@ -71,11 +71,11 @@ public final class SLCollectors
      * @see #wrapFinisher
      * @since 0.1.0, MC 1.19.1, 2022.08.08
      */
-    public static <T, A, R> Collector<T, A, Optional<R>> toOptional(final @NotNull Supplier<A> supplier,
-                                                                    final @NotNull BiConsumer<A, T> accumulator,
-                                                                    final @NotNull BinaryOperator<A> combiner,
-                                                                    final @NotNull Function<A, R> finisher,
-                                                                    final @NotNull Collector.Characteristics... c13s)
+    public static <T, A, R> Collector<T, A, Optional<R>> toOptional(@Nonnull final Supplier<A> supplier,
+                                                                    @Nonnull final BiConsumer<A, T> accumulator,
+                                                                    @Nonnull final BinaryOperator<A> combiner,
+                                                                    @Nonnull final Function<A, R> finisher,
+                                                                    @Nonnull final Collector.Characteristics... c13s)
     {
         return Collector.of(supplier, accumulator, combiner, wrapFinisher(finisher), removeIdFinish(c13s));
     }
@@ -94,10 +94,10 @@ public final class SLCollectors
      * @see #toOptional(Supplier, BiConsumer, BinaryOperator, Function, Collector.Characteristics...)
      * @since 0.1.0, MC 1.19.1, 2022.08.08
      */
-    public static <T, A> Collector<T, A, Optional<A>> toOptional(final @NotNull Supplier<A> supplier,
-                                                                 final @NotNull BiConsumer<A, T> accumulator,
-                                                                 final @NotNull BinaryOperator<A> combiner,
-                                                                 final @NotNull Collector.Characteristics... c13s)
+    public static <T, A> Collector<T, A, Optional<A>> toOptional(@Nonnull final Supplier<A> supplier,
+                                                                 @Nonnull final BiConsumer<A, T> accumulator,
+                                                                 @Nonnull final BinaryOperator<A> combiner,
+                                                                 @Nonnull final Collector.Characteristics... c13s)
     {
         return toOptional(supplier, accumulator, combiner, Function.identity(), c13s);
     }
@@ -109,7 +109,7 @@ public final class SLCollectors
      * @see SLCollectors#toOptional(Supplier, BiConsumer, BinaryOperator, Collector.Characteristics...)
      * @see SLCollectors#wrapFinisher
      */
-    public static <T, A, R> Collector<T, A, Optional<R>> toOptional(final @NotNull Collector<T, A, R> collector)
+    public static <T, A, R> Collector<T, A, Optional<R>> toOptional(@Nonnull final Collector<T, A, R> collector)
     {
         return toOptional(collector.supplier(), collector.accumulator(), collector.combiner(), collector.finisher(),
             collector.characteristics().toArray(Collector.Characteristics[]::new));
@@ -132,7 +132,7 @@ public final class SLCollectors
      *
      * @since 0.1.0, MC 1.19.1, 2022.08.08
      */
-    public static <A, R> Function<A, Optional<R>> wrapFinisher(final @NotNull Function<A, R> finisher)
+    public static <A, R> Function<A, Optional<R>> wrapFinisher(@Nonnull final Function<A, R> finisher)
     {
         Objects.requireNonNull(finisher, "A finisher function is required for wrapping.");
         return obj -> switch (obj) {
@@ -149,7 +149,7 @@ public final class SLCollectors
      * @param c13s An varargs array of Characteristics that were passed to a Collector.
      * @return facepalm.jpg
      */
-    private static Collector.Characteristics[] removeIdFinish(final @NotNull Collector.Characteristics[] c13s)
+    private static Collector.Characteristics[] removeIdFinish(@Nonnull final Collector.Characteristics[] c13s)
     {
         return c13s.length == 0 ? c13s : Arrays.stream(c13s).filter(e -> e != Collector.Characteristics.IDENTITY_FINISH).toArray(Collector.Characteristics[]::new);
     }
