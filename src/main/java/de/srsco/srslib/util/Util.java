@@ -153,6 +153,19 @@ public final class Util
     /* Common Registry Helpers */
 
     /**
+     * <h3>A helper method to get a {@link ResourceLocation} for a registered object of nonambiguous type.</h3>
+     *
+     * @param obj The object to get a ResourceLocation for
+     * @return    The ResourceKey
+     *
+     * @since 4.0.0, MC 1.21, 2024.07.10
+     */
+    public static <T> Optional<ResourceLocation> getResLoc(final T obj)
+    {
+        return getResKey(obj).map(ResourceKey::location);
+    }
+
+    /**
      * <h3>A helper method to get a {@link ResourceKey} for a registered object of nonambiguous type.</h3>
      *
      * @param obj The object to get a ResourceKey for.
