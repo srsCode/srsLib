@@ -30,24 +30,16 @@
 package de.srsco.srslib.util;
 
 
-import java.util.Arrays;
-import java.util.function.BiFunction;
-
 import javax.annotation.Nullable;
 
-import org.slf4j.Logger;
-
-import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 
-import net.neoforged.neoforge.common.I18nExtension;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
 public final class ComponentUtil
 {
-    private static final Logger LOGGER = Util.getLogger(ComponentUtil.class);
-    private static final String EMPTY_STRING = "";
+    private static final Object[] EMPTY_ARGS = new Object[0];
 
     private ComponentUtil() {}
 
@@ -55,77 +47,90 @@ public final class ComponentUtil
     /* Text & Component Helpers */
 
     /**
-     * <h3>A BiFunction to generate an error message for a missing langkey.</h3>
-     * (If the langkey was not found in the lang file and a fallback was not provided.)
-     * Logs an error as well as returns a Component for in-game feedback.
-     *
-     * @since 0.1.0, MC 1.19.1, 2022.08.08
-     */
-    public static final BiFunction<CharSequence, String, Component> INVALID_LANGKEY = (key, objs) -> {
-        LOGGER.debug("Bad langkey: {}, Using Objects: {}", key, objs);
-        return Component.literal("Bad langkey: " + key + ", Using Objects: " + objs);
-    };
-
-    /**
      * <h3>Creates a translatable Component for a langkey.</h3>
-     * Uses {@link I18nExtension}
      *
-     * @param key  A langkey
-     * @return A translatable Component, or a literal Component if the langkey does not exist.
+     * @param key A langkey
+     * @return    A translatable Component.
      *
      * @since 0.1.0, MC 1.19.1, 2022.08.08
      */
     public static Component getTranslation(final String key)
     {
-        return getTranslation(key, CommonComponents.EMPTY);
+        return getTranslation(key, null, null, EMPTY_ARGS);
+    }
+
+    /**
+     * <h3>Creates a translatable Component for a langkey or uses a fallback string if the langkey does not exist.</h3>
+     *
+     * @param key      A langkey
+     * @param fallback An optional fallback string.
+     * @return         A translatable Component.
+     *
+     * @since 4.0.0, MC 1.21, 2024.07.10
+     */
+    public static Component getTranslation(final String key, @Nullable final String fallback)
+    {
+        return getTranslation(key, fallback, null, EMPTY_ARGS);
     }
 
     /**
      * <h3>Creates a translatable Component for a langkey.</h3>
-     * Uses {@link I18nExtension}
      *
      * @param key  A langkey
-     * @param objs Objects to be used in a formatted text string.
-     * @return A translatable Component, or a literal Component if the langkey does not exist.
+     * @param objs Objects to be used in a formatted text string
+     * @return     A translatable Component, or a literal Component if the langkey does not exist
      *
      * @since 0.1.0, MC 1.19.1, 2022.08.08
      */
     public static Component getTranslation(final String key, final Object... objs)
     {
-        return getTranslation(key, CommonComponents.EMPTY, null, objs);
+        return getTranslation(key, null, null, objs);
     }
 
     /**
-     * <h3>Creates a translatable Component for a langkey using a possibly supplied Component.</h3>
-     * Uses {@link I18nExtension}
+     * <h3>Creates a translatable Component for a langkey or uses a fallback string if the langkey does not exist.</h3>
      *
-     * @param component A possible Component to be used for translation (i.e. a {@link Player} display name).
+     * @param key      A langkey
+     * @param fallback An optional fallback string
+     * @param objs     Objects to be used in a formatted text string
+     * @return         A translatable Component, or a literal Component if the langkey does not exist
+     *
+     * @since 4.0.0, MC 1.21, 2024.07.10
+     */
+    public static Component getTranslation(final String key, @Nullable final String fallback, final Object... objs)
+    {
+        return getTranslation(key, fallback, null, objs);
+    }
+
+    /**
+     * <h3>Creates a translatable Component for a langkey using an optional supplied Component.</h3>
+     *
      * @param key       A langkey
-     * @param objs      Objects to be used in a formatted text string.
-     * @return A translatable Component, or a literal Component if the langkey does not exist.
+     * @param component A possible Component to be used for translation (i.e. a {@link Player} display name)
+     * @param objs      Objects to be used in a formatted text string
+     * @return          A translatable Component, or a literal Component if the langkey does not exist
      *
      * @since 0.1.0, MC 1.19.1, 2022.08.08
      */
     public static Component getTranslation(final String key, @Nullable final Component component, final Object... objs)
     {
-        return getTranslation(key, component, null, objs);
+        return getTranslation(key, null, component, objs);
     }
 
     /**
-     * <h3>Creates a translatable Component for a langkey using a possible supplied Component or uses a fallback string if the langkey does not exist.</h3>
-     * Uses {@link I18nExtension}
+     * <h3>Creates a translatable Component for a langkey using an optional supplied Component or uses a fallback string if the langkey does not exist.</h3>
      *
-     * @param component A possible Component to be used for translation (i.e. a {@link Player} display name).
      * @param key       A langkey
-     * @param objs      Objects to be used in a formatted text string.
-     * @return A translatable Component, or a literal Component if the langkey does not exist.
+     * @param fallback  An optional fallback string
+     * @param component A possible Component to be used for translation (i.e. a {@link Player} display name)
+     * @param objs      Objects to be used in a formatted text string
+     * @return          A translatable Component
      *
-     * @since 0.1.0, MC 1.19.1, 2022.08.08
+     * @since 4.0.0, MC 1.21, 2024.07.10
      */
-    public static Component getTranslation(final String key, @Nullable final Component component, @Nullable final Component fallback, final Object... objs)
+    public static Component getTranslation(final String key, @Nullable final String fallback, @Nullable final Component component, final Object... objs)
     {
-        return I18nExtension.getPattern(key, () -> EMPTY_STRING).equals(EMPTY_STRING)
-            ? fallback  != null ? fallback : INVALID_LANGKEY.apply(key, Arrays.toString(objs))
-            : component != null ? Component.translatable(key, component, objs) : Component.translatable(key, objs);
+        final var fb = (fallback != null && fallback.isBlank()) ? null : fallback;
+        return component == null ? Component.translatableWithFallback(key, fb, objs) : Component.translatableWithFallback(key, fb, component, objs);
     }
 }

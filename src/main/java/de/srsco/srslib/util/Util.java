@@ -30,56 +30,92 @@
 package de.srsco.srslib.util;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
+import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import com.google.common.collect.ImmutableList;
+import com.mojang.serialization.MapCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import net.minecraft.advancements.CriterionTrigger;
+import net.minecraft.advancements.critereon.ItemSubPredicate;
+import net.minecraft.commands.synchronization.ArgumentTypeInfo;
 import net.minecraft.core.DefaultedRegistry;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
+import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.numbers.NumberFormatType;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.stats.StatType;
+import net.minecraft.util.valueproviders.FloatProviderType;
+import net.minecraft.util.valueproviders.IntProviderType;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.sensing.SensorType;
 import net.minecraft.world.entity.ai.village.poi.PoiType;
-import net.minecraft.world.entity.decoration.PaintingVariant;
+import net.minecraft.world.entity.animal.CatVariant;
+import net.minecraft.world.entity.animal.FrogVariant;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.entity.npc.VillagerType;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.entity.schedule.Schedule;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.ArmorMaterial;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Instrument;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.entity.DecoratedPotPattern;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
+import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.level.gameevent.PositionSourceType;
+import net.minecraft.world.level.levelgen.blockpredicates.BlockPredicateType;
 import net.minecraft.world.level.levelgen.carver.WorldCarver;
 import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.featuresize.FeatureSizeType;
 import net.minecraft.world.level.levelgen.feature.foliageplacers.FoliagePlacerType;
+import net.minecraft.world.level.levelgen.feature.rootplacers.RootPlacerType;
 import net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProviderType;
 import net.minecraft.world.level.levelgen.feature.treedecorators.TreeDecoratorType;
+import net.minecraft.world.level.levelgen.feature.trunkplacers.TrunkPlacerType;
+import net.minecraft.world.level.levelgen.heightproviders.HeightProviderType;
+import net.minecraft.world.level.levelgen.placement.PlacementModifierType;
+import net.minecraft.world.level.levelgen.structure.StructureType;
+import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType;
+import net.minecraft.world.level.levelgen.structure.placement.StructurePlacementType;
+import net.minecraft.world.level.levelgen.structure.pools.StructurePoolElementType;
+import net.minecraft.world.level.levelgen.structure.templatesystem.PosRuleTestType;
+import net.minecraft.world.level.levelgen.structure.templatesystem.RuleTestType;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorType;
+import net.minecraft.world.level.levelgen.structure.templatesystem.rule.blockentity.RuleBlockEntityModifierType;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.saveddata.maps.MapDecorationType;
+import net.minecraft.world.level.storage.loot.entries.LootPoolEntryType;
+import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
+import net.minecraft.world.level.storage.loot.predicates.LootItemConditionType;
+import net.minecraft.world.level.storage.loot.providers.nbt.LootNbtProviderType;
+import net.minecraft.world.level.storage.loot.providers.number.LootNumberProviderType;
+import net.minecraft.world.level.storage.loot.providers.score.LootScoreProviderType;
 
 
 @SuppressWarnings({"unused", "WeakerAccess"})
@@ -117,73 +153,69 @@ public final class Util
     /* Common Registry Helpers */
 
     /**
-     * <h3>A helper method to get a {@link ResourceLocation} for a {@link Block}.</h3>
-     * Maps a ResourceKey to a ResourceLocation as {@link DefaultedRegistry#getKey} returns the registry default key instead of null.
+     * <h3>A helper method to get a {@link ResourceKey} for a registered object of nonambiguous type.</h3>
      *
-     * @param block The Block to get a ResourceLocation for.
-     * @return The ResourceLocation.
+     * @param obj The object to get a ResourceKey for.
+     * @return The ResourceKey.
      *
-     * @since 0.1.0, MC 1.19.1, 2022.08.08
+     * @since 4.0.0, MC 1.21, 2024.07.04
      */
-    public static Optional<ResourceLocation> getResLoc(final Block block)
+    public static <T> Optional<ResourceKey<T>> getResKey(final T obj)
     {
-        return getRegistryFor(Block.class).flatMap(rh -> rh.getResourceKey(block).map(ResourceKey::location));
+        return getRegistryFor(obj).flatMap(rh -> rh.getResourceKey(obj));
     }
 
     /**
-     * <h3>A helper method to get a {@link ResourceLocation} for a {@link Fluid}.</h3>
-     * Maps a ResourceKey to a ResourceLocation as {@link DefaultedRegistry#getKey} returns the registry default key instead of null.
+     * <h3>A helper method to get a {@link ResourceKey} for a registered MapCodec.</h3>
      *
-     * @param fluid The Biome to get a ResourceLocation for.
-     * @return The ResourceLocation.
+     * @param obj The MapCodec to get a ResourceKey for.
+     * @return The ResourceKey.
      *
-     * @since 0.1.0, MC 1.19.1, 2022.08.08
+     * @since 4.0.0, MC 1.21, 2024.07.04
      */
-    public static Optional<ResourceLocation> getResLoc(final Fluid fluid)
+    public static <T extends MapCodec<?>> Optional<ResourceKey<?>> getResKey(final T obj)
     {
-        return getRegistryFor(Fluid.class).flatMap(rh -> rh.getResourceKey(fluid).map(ResourceKey::location));
+        return Stream.of(
+                // MapCodec registries as of 1.21
+                BuiltInRegistries.BIOME_SOURCE,
+                BuiltInRegistries.CHUNK_GENERATOR,
+                BuiltInRegistries.MATERIAL_CONDITION,
+                BuiltInRegistries.MATERIAL_RULE,
+                BuiltInRegistries.DENSITY_FUNCTION_TYPE,
+                BuiltInRegistries.BLOCK_TYPE,
+                BuiltInRegistries.POOL_ALIAS_BINDING_TYPE,
+                BuiltInRegistries.ENTITY_SUB_PREDICATE_TYPE,
+                BuiltInRegistries.ENCHANTMENT_LEVEL_BASED_VALUE_TYPE,
+                BuiltInRegistries.ENCHANTMENT_ENTITY_EFFECT_TYPE,
+                BuiltInRegistries.ENCHANTMENT_LOCATION_BASED_EFFECT_TYPE,
+                BuiltInRegistries.ENCHANTMENT_VALUE_EFFECT_TYPE,
+                BuiltInRegistries.ENCHANTMENT_PROVIDER_TYPE
+            )
+            .flatMap(Registry::holders)
+            .filter(h -> h.value().equals(obj))
+            .findFirst()
+            .map(Holder.Reference::key);
     }
 
     /**
-     * <h3>A helper method to get a {@link ResourceLocation} for a {@link Item}.</h3>
-     * Maps a ResourceKey to a ResourceLocation as {@link DefaultedRegistry#getKey} returns the registry default key instead of null.
+     * <h3>A helper method to get a {@link ResourceKey} for a registered DataComponentType.</h3>
      *
-     * @param item The Item to get a ResourceLocation for.
-     * @return The ResourceLocation.
+     * @param obj The DataComponentType to get a ResourceKey for.
+     * @return The ResourceKey.
      *
-     * @since 0.1.0, MC 1.19.1, 2022.08.08
+     * @since 4.0.0, MC 1.21, 2024.07.04
      */
-    public static Optional<ResourceLocation> getResLoc(final Item item)
+    public static <T extends DataComponentType<?>> Optional<ResourceKey<?>> getResKey(final T obj)
     {
-        return getRegistryFor(Item.class).flatMap(rh -> rh.getResourceKey(item).map(ResourceKey::location));
-    }
-
-    /**
-     * <h3>A helper method to get a {@link ResourceLocation} for a {@link Feature}.</h3>
-     * Maps a ResourceKey to a ResourceLocation.
-     *
-     * @param feature The Biome to get a ResourceLocation for.
-     * @return The ResourceLocation.
-     *
-     * @since 0.1.0, MC 1.19.1, 2022.08.08
-     */
-    public static Optional<ResourceLocation> getResLoc(final Feature<?> feature)
-    {
-        return getRegistryFor(Feature.class).flatMap(rh -> rh.getResourceKey(feature).map(ResourceKey::location));
-    }
-
-    /**
-     * <h3>A helper method to get a {@link ResourceLocation} for a {@link EntityType}.</h3>
-     * Maps a ResourceKey to a ResourceLocation as {@link DefaultedRegistry#getKey} returns the registry default key instead of null.
-     *
-     * @param entityType The Biome to get a ResourceLocation for.
-     * @return The ResourceLocation.
-     *
-     * @since 0.1.0, MC 1.19.1, 2022.08.08
-     */
-    public static Optional<ResourceLocation> getResLoc(final EntityType<?> entityType)
-    {
-        return getRegistryFor(EntityType.class).flatMap(rh -> rh.getResourceKey(entityType).map(ResourceKey::location));
+        return Stream.of(
+                // DataComponentType registries as of 1.21
+                BuiltInRegistries.DATA_COMPONENT_TYPE,
+                BuiltInRegistries.ENCHANTMENT_EFFECT_COMPONENT_TYPE
+            )
+            .flatMap(Registry::holders)
+            .filter(h -> h.value().equals(obj))
+            .findFirst()
+            .map(Holder.Reference::key);
     }
 
     /**
@@ -196,154 +228,91 @@ public final class Util
      *
      * @since 0.1.0, MC 1.19.1, 2022.08.08
      */
-    public static Optional<ResourceLocation> getResLoc(final Level level, final Biome biome)
+    public static Optional<ResourceKey<Biome>> getResKey(final Level level, final Biome biome)
     {
-        return level.registryAccess().registry(Registries.BIOME).flatMap(registry -> registry.getResourceKey(biome).map(ResourceKey::location));
+        return level.registryAccess().registry(Registries.BIOME).flatMap(registry -> registry.getResourceKey(biome));
     }
 
-    /**
-     * <h3>A helper to get the associated {@link ResourceKey} of a {@link Registry} for an object like a Block or Item.</h3>
-     *
-     * @param obj An object to look up a ResourceKey for.
-     * @param <T> The type of object.
-     * @return    A ResourceKey of a registry associated with the object if it exist.
-     */
     @SuppressWarnings("unchecked")
-    public static <T> Optional<ResourceKey<Registry<T>>> getKeyFor(final Class<T> obj)
+    public static <T> Optional<Registry<T>> getRegistryFor(final T obj)
     {
-        return getRegistryFor(obj).map(Registry::key).map(key -> (ResourceKey<Registry<T>>) key);
+        return Optional.ofNullable(
+            (Registry<T>) switch (obj) {
+                case GameEvent                      ignored -> BuiltInRegistries.GAME_EVENT;
+                case SoundEvent                     ignored -> BuiltInRegistries.SOUND_EVENT;
+                case Fluid                          ignored -> BuiltInRegistries.FLUID;
+                case MobEffect                      ignored -> BuiltInRegistries.MOB_EFFECT;
+                case Block                          ignored -> BuiltInRegistries.BLOCK;
+                case EntityType<?>                  ignored -> BuiltInRegistries.ENTITY_TYPE;
+                case Item                           ignored -> BuiltInRegistries.ITEM;
+                case Potion                         ignored -> BuiltInRegistries.POTION;
+                case ParticleType<?>                ignored -> BuiltInRegistries.PARTICLE_TYPE;
+                case BlockEntityType<?>             ignored -> BuiltInRegistries.BLOCK_ENTITY_TYPE;
+                case ResourceLocation               ignored -> BuiltInRegistries.CUSTOM_STAT;
+                case ChunkStatus                    ignored -> BuiltInRegistries.CHUNK_STATUS;
+                case RuleTestType<?>                ignored -> BuiltInRegistries.RULE_TEST;
+                case RuleBlockEntityModifierType<?> ignored -> BuiltInRegistries.RULE_BLOCK_ENTITY_MODIFIER;
+                case PosRuleTestType<?>             ignored -> BuiltInRegistries.POS_RULE_TEST;
+                case MenuType<?>                    ignored -> BuiltInRegistries.MENU;
+                case RecipeType<?>                  ignored -> BuiltInRegistries.RECIPE_TYPE;
+                case RecipeSerializer<?>            ignored -> BuiltInRegistries.RECIPE_SERIALIZER;
+                case Attribute                      ignored -> BuiltInRegistries.ATTRIBUTE;
+                case PositionSourceType<?>          ignored -> BuiltInRegistries.POSITION_SOURCE_TYPE;
+                case ArgumentTypeInfo<?, ?>         ignored -> BuiltInRegistries.COMMAND_ARGUMENT_TYPE;
+                case StatType<?>                    ignored -> BuiltInRegistries.STAT_TYPE;
+                case VillagerType                   ignored -> BuiltInRegistries.VILLAGER_TYPE;
+                case VillagerProfession             ignored -> BuiltInRegistries.VILLAGER_PROFESSION;
+                case PoiType                        ignored -> BuiltInRegistries.POINT_OF_INTEREST_TYPE;
+                case MemoryModuleType<?>            ignored -> BuiltInRegistries.MEMORY_MODULE_TYPE;
+                case SensorType<?>                  ignored -> BuiltInRegistries.SENSOR_TYPE;
+                case Schedule                       ignored -> BuiltInRegistries.SCHEDULE;
+                case Activity                       ignored -> BuiltInRegistries.ACTIVITY;
+                case LootPoolEntryType              ignored -> BuiltInRegistries.LOOT_POOL_ENTRY_TYPE;
+                case LootItemFunctionType<?>        ignored -> BuiltInRegistries.LOOT_FUNCTION_TYPE;
+                case LootItemConditionType          ignored -> BuiltInRegistries.LOOT_CONDITION_TYPE;
+                case LootNumberProviderType         ignored -> BuiltInRegistries.LOOT_NUMBER_PROVIDER_TYPE;
+                case LootNbtProviderType            ignored -> BuiltInRegistries.LOOT_NBT_PROVIDER_TYPE;
+                case LootScoreProviderType          ignored -> BuiltInRegistries.LOOT_SCORE_PROVIDER_TYPE;
+                case FloatProviderType<?>           ignored -> BuiltInRegistries.FLOAT_PROVIDER_TYPE;
+                case IntProviderType<?>             ignored -> BuiltInRegistries.INT_PROVIDER_TYPE;
+                case HeightProviderType<?>          ignored -> BuiltInRegistries.HEIGHT_PROVIDER_TYPE;
+                case BlockPredicateType<?>          ignored -> BuiltInRegistries.BLOCK_PREDICATE_TYPE;
+                case WorldCarver<?>                 ignored -> BuiltInRegistries.CARVER;
+                case Feature<?>                     ignored -> BuiltInRegistries.FEATURE;
+                case StructurePlacementType<?>      ignored -> BuiltInRegistries.STRUCTURE_PLACEMENT;
+                case StructurePieceType             ignored -> BuiltInRegistries.STRUCTURE_PIECE;
+                case StructureType<?>               ignored -> BuiltInRegistries.STRUCTURE_TYPE;
+                case PlacementModifierType<?>       ignored -> BuiltInRegistries.PLACEMENT_MODIFIER_TYPE;
+                case BlockStateProviderType<?>      ignored -> BuiltInRegistries.BLOCKSTATE_PROVIDER_TYPE;
+                case FoliagePlacerType<?>           ignored -> BuiltInRegistries.FOLIAGE_PLACER_TYPE;
+                case TrunkPlacerType<?>             ignored -> BuiltInRegistries.TRUNK_PLACER_TYPE;
+                case RootPlacerType<?>              ignored -> BuiltInRegistries.ROOT_PLACER_TYPE;
+                case TreeDecoratorType<?>           ignored -> BuiltInRegistries.TREE_DECORATOR_TYPE;
+                case FeatureSizeType<?>             ignored -> BuiltInRegistries.FEATURE_SIZE_TYPE;
+                case StructureProcessorType<?>      ignored -> BuiltInRegistries.STRUCTURE_PROCESSOR;
+                case StructurePoolElementType<?>    ignored -> BuiltInRegistries.STRUCTURE_POOL_ELEMENT;
+                case CatVariant                     ignored -> BuiltInRegistries.CAT_VARIANT;
+                case FrogVariant                    ignored -> BuiltInRegistries.FROG_VARIANT;
+                case Instrument                     ignored -> BuiltInRegistries.INSTRUMENT;
+                case DecoratedPotPattern            ignored -> BuiltInRegistries.DECORATED_POT_PATTERN;
+                case CreativeModeTab                ignored -> BuiltInRegistries.CREATIVE_MODE_TAB;
+                case CriterionTrigger<?>            ignored -> BuiltInRegistries.TRIGGER_TYPES;
+                case NumberFormatType<?>            ignored -> BuiltInRegistries.NUMBER_FORMAT_TYPE;
+                case ArmorMaterial                  ignored -> BuiltInRegistries.ARMOR_MATERIAL;
+                case ItemSubPredicate.Type<?>       ignored -> BuiltInRegistries.ITEM_SUB_PREDICATE_TYPE;
+                case MapDecorationType              ignored -> BuiltInRegistries.MAP_DECORATION_TYPE;
+                default                                     -> null;
+            }
+        );
     }
 
-    /**
-     * <h3>A helper to get the associated {@link Registry} for an object like a Block or Item.</h3>
-     *
-     * @param type An object to look up a IForgeRegistry for.
-     * @param <T> The type of object.
-     * @return    A registry instance associated with the object if it exist.
-     */
-    public static <T> Optional<Registry<T>> getRegistryFor(final Class<T> type)
+    @SuppressWarnings("unchecked")
+    public <T> Optional<Registry<T>> getRegistryFor(final ResourceKey<T> key)
     {
-        return RegistryHelper.getFromType(type);
-    }
-
-    public static final class Identity
-    {
-        private Identity() {}
-
-        /**
-         * <h3>A Helper to check if two {@link ResourceKey}s are equal base on their internal data.</h3>
-         *
-         * @param first  The first ResourceKey
-         * @param second The second ResourceKey
-         * @return       true if the ResourceKeys are equal
-         */
-        public static boolean isEqual(final ResourceKey<?> first, final ResourceKey<?> second)
-        {
-            return first.registry().equals(second.registry()) && first.location().equals(second.location());
-        }
-
-        /**
-         * <h3>A Helper to generate a hashCode for a {@link ResourceKey} from its internal data.</h3>
-         *
-         * @param key The ResourceKey
-         * @return    The hashCode
-         */
-        public static int getResKeyHashCode(final ResourceKey<?> key)
-        {
-            return 31 * key.registry().hashCode() + key.location().hashCode();
-        }
-    }
-
-    /**
-     * <h3>A helper class to get the associated {@link Registry} for an object like a Block or Item.</h3>
-     *
-     * @since 2.0.0, MC 1.20.4, 2023.12.18 - INTERNAL
-     */
-    private static final class RegistryHelper
-    {
-
-        /**
-         * Use a List instead of a HashSet because we don't want RegistryEntry#hashCode being called from a static context, which will cause
-         * the associated Registry to be supplied to get it's RegistryKey. This could cause a ClassNotFoundException in a dev environment
-         * since this will likely load before Minecraft classes.
-         */
-        private static final List<RegistryEntry<?>> ENTRIES;
-
-        static
-        {
-            ENTRIES = ImmutableList.<RegistryEntry<?>>builder().add(
-                RegistryEntry.make(Block.class,                  () -> BuiltInRegistries.BLOCK),
-                RegistryEntry.make(Fluid.class,                  () -> BuiltInRegistries.FLUID),
-                RegistryEntry.make(Item.class,                   () -> BuiltInRegistries.ITEM),
-                RegistryEntry.make(MobEffect.class,              () -> BuiltInRegistries.MOB_EFFECT),
-                RegistryEntry.make(Potion.class,                 () -> BuiltInRegistries.POTION),
-                RegistryEntry.make(Attribute.class,              () -> BuiltInRegistries.ATTRIBUTE),
-                RegistryEntry.make(StatType.class,               () -> BuiltInRegistries.STAT_TYPE),
-                RegistryEntry.make(SoundEvent.class,             () -> BuiltInRegistries.SOUND_EVENT),
-                RegistryEntry.make(Enchantment.class,            () -> BuiltInRegistries.ENCHANTMENT),
-                RegistryEntry.make(EntityType.class,             () -> BuiltInRegistries.ENTITY_TYPE),
-                RegistryEntry.make(PaintingVariant.class,        () -> BuiltInRegistries.PAINTING_VARIANT),
-                RegistryEntry.make(ParticleType.class,           () -> BuiltInRegistries.PARTICLE_TYPE),
-                RegistryEntry.make(MenuType.class,               () -> BuiltInRegistries.MENU),
-                RegistryEntry.make(BlockEntityType.class,        () -> BuiltInRegistries.BLOCK_ENTITY_TYPE),
-                RegistryEntry.make(RecipeType.class,             () -> BuiltInRegistries.RECIPE_TYPE),
-                RegistryEntry.make(RecipeSerializer.class,       () -> BuiltInRegistries.RECIPE_SERIALIZER),
-                RegistryEntry.make(VillagerProfession.class,     () -> BuiltInRegistries.VILLAGER_PROFESSION),
-                RegistryEntry.make(PoiType.class,                () -> BuiltInRegistries.POINT_OF_INTEREST_TYPE),
-                RegistryEntry.make(MemoryModuleType.class,       () -> BuiltInRegistries.MEMORY_MODULE_TYPE),
-                RegistryEntry.make(SensorType.class,             () -> BuiltInRegistries.SENSOR_TYPE),
-                RegistryEntry.make(Schedule.class,               () -> BuiltInRegistries.SCHEDULE),
-                RegistryEntry.make(Activity.class,               () -> BuiltInRegistries.ACTIVITY),
-                RegistryEntry.make(WorldCarver.class,            () -> BuiltInRegistries.CARVER),
-                RegistryEntry.make(Feature.class,                () -> BuiltInRegistries.FEATURE),
-                RegistryEntry.make(ChunkStatus.class,            () -> BuiltInRegistries.CHUNK_STATUS),
-                RegistryEntry.make(BlockStateProviderType.class, () -> BuiltInRegistries.BLOCKSTATE_PROVIDER_TYPE),
-                RegistryEntry.make(FoliagePlacerType.class,      () -> BuiltInRegistries.FOLIAGE_PLACER_TYPE),
-                RegistryEntry.make(TreeDecoratorType.class,      () -> BuiltInRegistries.TREE_DECORATOR_TYPE)
-            ).build();
-        }
-
-        @SuppressWarnings("unchecked")
-        public static <T> Optional<Registry<T>> getFromType(final Class<T> type)
-        {
-            return ENTRIES.stream()
-                .filter(entry -> entry.type().isAssignableFrom(type))
-                .findFirst()
-                .map(RegistryEntry::registry)
-                .map(Supplier::get)
-                .map(registry -> (Registry<T>) registry);
-        }
-
-        /**
-         * <h3>An entry class linking a Class to an associated {@link Registry} for an object like a Block or Item.</h3>
-         *
-         * @param registry A Supplier for the Registry instance.
-         * @param <T>      The object type of the registry.
-         */
-        public record RegistryEntry<T>(Class<? super T> type, Supplier<Registry<T>> registry)
-        {
-            /**
-             * The {@link ResourceKey} of the {@link Registry} is sufficient in determining equality.
-             */
-            @Override
-            public boolean equals(final Object obj)
-            {
-                return this == obj || obj instanceof RegistryEntry<?> other && Identity.isEqual(registry().get().key(), other.registry().get().key());
-            }
-
-            /**
-             * The {@link ResourceKey} of the {@link Registry} is sufficient in calculating the hashCode.
-             */
-            @Override
-            public int hashCode()
-            {
-                return Identity.getResKeyHashCode(registry().get().key());
-            }
-
-            private static <T> RegistryEntry<T> make(final Class<? super T> type, final Supplier<Registry<T>> registry)
-            {
-                return new RegistryEntry<>(type, registry);
-            }
+        if (key.registry().equals(Registries.ROOT_REGISTRY_NAME)) {
+            return BuiltInRegistries.REGISTRY.getHolder(key.location()).map(holder -> (Registry<T>) holder.value());
+        } else {
+            return BuiltInRegistries.REGISTRY.getHolder(key.registry()).map(holder -> (Registry<T>) holder.value());
         }
     }
 

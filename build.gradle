@@ -35,7 +35,8 @@ tasks.withType(Jar).configureEach {
         'Implementation-Title'    : "${base.archivesName.get()}",
         'Implementation-Version'  : "${project.version}",
         'Build-Jdk'               : "${System.properties['java.vendor']} ${System.properties['java.vm.version']}",
-        'Build-Timestamp'         : java.time.OffsetDateTime.now() as String
+        'Build-Timestamp'         : java.time.OffsetDateTime.now() as String,
+        "FMLModType"              : "GAMELIBRARY"
     ])
 }
 
