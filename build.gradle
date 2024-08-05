@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
     id 'idea'
     id 'checkstyle'
-    id 'net.neoforged.gradle.userdev' version '7.0.+'
+    id 'net.neoforged.moddev' version '0.1.+'
 }
 if (file('../.etc/srscode-MC.gradle').exists()) { apply from:'../.etc/srscode-MC.gradle' }
 
@@ -24,7 +24,9 @@ tasks.withType(Checkstyle).configureEach {
     it.reports.html.required = true
 }
 
-dependencies {implementation (group:'net.neoforged', name:'neoforge', version:"${neo_version}")}
+repositories {mavenLocal()}
+
+neoForge.version = project.neo_version
 
 tasks.withType(JavaCompile).configureEach {options.encoding = 'UTF-8'}
 
@@ -52,6 +54,11 @@ tasks.create('cleanOutputs', Delete).configure {cotask ->
 // A task to execute a clean build
 tasks.create('cleanBuild') {
     dependsOn 'cleanOutputs', 'build'
+}
+
+idea.module {
+    downloadSources = true
+    downloadJavadoc = true
 }
 
 publishing {
