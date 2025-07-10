@@ -44,12 +44,12 @@ tasks.withType(Jar).configureEach {
 
 // A task to partially clean build outputs while leaving cached artifacts alone
 tasks.register('cleanOutputs', Delete).configure {cotask ->
-    tasks.named('assemble').configure {mustRunAfter(cotask)}
     doFirst {targetFiles.each {project.logger.lifecycle "cleaning: $it.canonicalPath"}}
     delete(tasks.withType(JavaCompile).collect {it.outputs.files.files}.flatten())
     var libs = layout.buildDirectory.get().getAsFile().toPath().resolve("libs").toFile()
     if (libs.exists()) {delete(libs.listFiles())}
 }
+tasks.named('assemble').configure {mustRunAfter('cleanOutputs')}
 
 // A task to execute a clean build
 tasks.register('cleanBuild') {
