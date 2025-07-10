@@ -37,6 +37,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
+import com.mojang.logging.LogUtils;
 import com.mojang.serialization.MapCodec;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -120,8 +121,6 @@ import net.minecraft.world.level.storage.loot.providers.score.LootScoreProviderT
 @SuppressWarnings({"unused", "WeakerAccess"})
 public final class Util
 {
-    private static final Logger LOGGER = getLogger(Util.class);
-
     private Util() {}
 
 
@@ -136,7 +135,10 @@ public final class Util
      * @return    A logger instance for a class.
      *
      * @since 0.1.0, MC 1.19.1, 2022.08.08
+     * @deprecated @ 4.3.0 2025.07.10 - This seems pointless to have since Minecraft already has a useful util method for this
+     * Keep this as-is until removal as defering to Minecraft LogUtils will produce an erroneous Logger as it is caller-sensitive
      */
+    @Deprecated
     public static Logger getLogger(@NotNull final Object obj)
     {
         return switch (obj) {
@@ -144,6 +146,20 @@ public final class Util
             case Class<?> c -> LoggerFactory.getLogger(c);
             default         -> LoggerFactory.getLogger(obj.getClass());
         };
+    }
+
+    /**
+     * <h3>Gets a new {@link Logger} instance for a Class.</h3>
+     * This is an alias of {@link com.mojang.logging.LogUtils#getLogger}
+     * This must return a Supplier as #getLogger is caller-sensitive via a StackWalker
+     *
+     * @return A Supplier for a Logger instance.
+     *
+     * @since 4.3.0, MC 1.21.1, 2025.07.10
+     */
+    public static Supplier<Logger> getLogger()
+    {
+        return LogUtils::getLogger;
     }
 
 
@@ -160,6 +176,36 @@ public final class Util
     public static <T> Optional<ResourceLocation> getResLoc(@NotNull final T obj)
     {
         return getResKey(obj).map(ResourceKey::location);
+    }
+
+    /**
+     * <h3>An alias for {@link ResourceKey#create(ResourceKey, ResourceLocation)}</h3>
+     *
+     * @param registry The Registry to use for a new ResourceKey
+     * @param resLoc   The ResourceLocation to create a new ResourceKey with
+     * @param <T>      The type of object for the registry
+     * @return         A new ResourceKey
+     *
+     * @since 4.3.0, MC 1.21, 2025.07.10
+     */
+    public static <T> ResourceKey<T> makeResKey(@NotNull final Registry<T> registry, @NotNull final ResourceLocation resLoc)
+    {
+        return makeResKey(registry.key(), resLoc);
+    }
+
+    /**
+     * <h3>An alias for {@link ResourceKey#create(ResourceKey, ResourceLocation)}</h3>
+     *
+     * @param registryKey The ResourceKey for a Registry
+     * @param resLoc      The ResourceLocation to create a new ResourceKey with
+     * @param <T>         The type of object for the registry
+     * @return            A new ResourceKey
+     *
+     * @since 4.3.0, MC 1.21, 2025.07.10
+     */
+    public static <T> ResourceKey<T> makeResKey(@NotNull final ResourceKey<? extends Registry<T>> registryKey, @NotNull final ResourceLocation resLoc)
+    {
+        return ResourceKey.create(registryKey, resLoc);
     }
 
     /**
@@ -199,7 +245,8 @@ public final class Util
                 BuiltInRegistries.ENCHANTMENT_ENTITY_EFFECT_TYPE,
                 BuiltInRegistries.ENCHANTMENT_LOCATION_BASED_EFFECT_TYPE,
                 BuiltInRegistries.ENCHANTMENT_VALUE_EFFECT_TYPE,
-                BuiltInRegistries.ENCHANTMENT_PROVIDER_TYPE
+                BuiltInRegistries.ENCHANTMENT_PROVIDER_TYPE,
+                BuiltInRegistries.ITEM_SUB_PREDICATE_TYPE
             )
             .flatMap(Registry::holders)
             .filter(h -> h.value().equals(obj))
