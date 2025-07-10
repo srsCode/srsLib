@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
     id 'idea'
     id 'checkstyle'
-    id 'net.neoforged.moddev' version '0.1.+'
+    id 'net.neoforged.moddev' version '2.+'
 }
 if (file('../.etc/srscode-MC.gradle').exists()) { apply from:'../.etc/srscode-MC.gradle' }
 
@@ -43,8 +43,8 @@ tasks.withType(Jar).configureEach {
 }
 
 // A task to partially clean build outputs while leaving cached artifacts alone
-tasks.create('cleanOutputs', Delete).configure {cotask ->
-    tasks.getByName('assemble').configure {mustRunAfter(cotask)}
+tasks.register('cleanOutputs', Delete).configure {cotask ->
+    tasks.named('assemble').configure {mustRunAfter(cotask)}
     doFirst {targetFiles.each {project.logger.lifecycle "cleaning: $it.canonicalPath"}}
     delete(tasks.withType(JavaCompile).collect {it.outputs.files.files}.flatten())
     var libs = layout.buildDirectory.get().getAsFile().toPath().resolve("libs").toFile()
@@ -52,7 +52,7 @@ tasks.create('cleanOutputs', Delete).configure {cotask ->
 }
 
 // A task to execute a clean build
-tasks.create('cleanBuild') {
+tasks.register('cleanBuild') {
     dependsOn 'cleanOutputs', 'build'
 }
 
@@ -95,8 +95,6 @@ publishing {
         }
     }
     repositories {
-        maven {
-            mavenLocal()
-        }
+        mavenLocal()
     }
 }
