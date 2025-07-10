@@ -31,7 +31,7 @@ package de.srsco.srslib.function;
 
 import java.util.Objects;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 
 @FunctionalInterface
@@ -44,13 +44,13 @@ public interface Evaluator
         return () -> !evaluate();
     }
 
-    default Evaluator and(@Nonnull final Evaluator other)
+    default Evaluator and(@NotNull final Evaluator other)
     {
         Objects.requireNonNull(other);
         return () -> evaluate() && other.evaluate();
     }
 
-    default Evaluator or(@Nonnull final Evaluator other)
+    default Evaluator or(@NotNull final Evaluator other)
     {
         Objects.requireNonNull(other);
         return () -> evaluate() || other.evaluate();

@@ -37,10 +37,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import com.mojang.serialization.MapCodec;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -133,14 +132,12 @@ public final class Util
      * If the passed object is a String or a Class, create a logger with it,
      * otherwise a Logger is created using a class lookup of the Object.
      *
-     * TODO: Migrate to pattern matching when it is no longer a preview feature. (Java19?)
-     *
      * @param obj The Class/Object to derive a Logger from.
      * @return    A logger instance for a class.
      *
      * @since 0.1.0, MC 1.19.1, 2022.08.08
      */
-    public static Logger getLogger(@Nonnull final Object obj)
+    public static Logger getLogger(@NotNull final Object obj)
     {
         return switch (obj) {
             case String s   -> LoggerFactory.getLogger(s);
@@ -160,7 +157,7 @@ public final class Util
      *
      * @since 4.0.0, MC 1.21, 2024.07.10
      */
-    public static <T> Optional<ResourceLocation> getResLoc(final T obj)
+    public static <T> Optional<ResourceLocation> getResLoc(@NotNull final T obj)
     {
         return getResKey(obj).map(ResourceKey::location);
     }
@@ -173,7 +170,7 @@ public final class Util
      *
      * @since 4.0.0, MC 1.21, 2024.07.04
      */
-    public static <T> Optional<ResourceKey<T>> getResKey(final T obj)
+    public static <T> Optional<ResourceKey<T>> getResKey(@NotNull final T obj)
     {
         return getRegistryFor(obj).flatMap(rh -> rh.getResourceKey(obj));
     }
@@ -342,7 +339,7 @@ public final class Util
      *
      * @since 0.1.0, MC 1.19.1, 2022.08.08
      */
-    public record LangKeyBuilder(@Nonnull Supplier<String> root, @Nonnull Supplier<String> context, MutableJoiner stack, MutableJoiner buffer) implements CharSequence
+    public record LangKeyBuilder(@NotNull Supplier<String> root, @NotNull Supplier<String> context, MutableJoiner stack, MutableJoiner buffer) implements CharSequence
     {
         private static final Collector<CharSequence, MutableJoiner, Optional<String>> OPTIONAL_COLLECTOR = Collector.of(
             MutableJoiner::newDotJoiner, MutableJoiner::push, MutableJoiner::merge, MutableJoiner::getOptional);
@@ -375,7 +372,7 @@ public final class Util
             return toString().charAt(index);
         }
 
-        @Nonnull
+        @NotNull
         @Override
         public CharSequence subSequence(final int start, final int end)
         {
@@ -398,7 +395,7 @@ public final class Util
             return Objects.hash(toString());
         }
 
-        @Nonnull
+        @NotNull
         @Override
         public String toString()
         {
